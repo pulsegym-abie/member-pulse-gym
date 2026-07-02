@@ -359,19 +359,19 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f2f2f7] py-4 px-4 md:py-10 md:px-6 flex flex-col justify-between font-sans">
+    <div className="min-h-screen bg-[#f2f2f7] py-3 px-3 md:py-5 md:px-6 flex flex-col justify-between font-sans">
       
       {/* HEADER SECTION */}
-      <header className="w-full max-w-5xl mx-auto mb-6 bg-white/90 backdrop-blur-md border border-[#E5E5EA] rounded-[22px] px-6 py-4.5 flex justify-between items-center shadow-sm">
-        <div className="flex items-center space-x-3">
-          <div className="w-11 h-11 rounded-xl bg-[#007AFF] flex items-center justify-center text-white shadow-md shadow-[#007AFF]/20">
-            <Dumbbell className="w-6 h-6 animate-pulse" />
+      <header className="w-full max-w-5xl mx-auto mb-4 bg-white/90 backdrop-blur-md border border-[#E5E5EA] rounded-[18px] px-5 py-3 flex justify-between items-center shadow-sm">
+        <div className="flex items-center space-x-2.5">
+          <div className="w-9.5 h-9.5 rounded-lg bg-[#007AFF] flex items-center justify-center text-white shadow-md shadow-[#007AFF]/20">
+            <Dumbbell className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-black font-display">
+            <h1 className="text-lg font-extrabold tracking-tight text-black font-display">
               PULSE <span className="text-[#007AFF]">POWERHUB</span>
             </h1>
-            <p className="text-[10px] text-[#8E8E93] font-bold uppercase tracking-widest leading-none mt-0.5">Self-Service Kiosk</p>
+            <p className="text-[9px] text-[#8E8E93] font-bold uppercase tracking-widest leading-none mt-0.5">Self-Service Kiosk</p>
           </div>
         </div>
 
@@ -562,10 +562,10 @@ export default function App() {
             
             {/* LEFT SIDEBAR - STEP TRACKER FOR TABLET (10-inch desktop layouts) */}
             <div className="hidden md:block md:col-span-4 lg:col-span-3">
-              <div className="bg-white rounded-[24px] border border-slate-100 shadow-lg p-5 sticky top-6 flex flex-col justify-between h-full min-h-[380px] md:min-h-[480px]">
+              <div className="bg-white rounded-[24px] border border-slate-100 shadow-lg p-4 flex flex-col justify-between h-full">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-5 px-1">Registration Steps</h3>
-                  <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Registration Steps</h3>
+                  <div className="space-y-1.5">
                     {stepsList.map((step, idx) => {
                       const isCompleted = idx < currentStepIndex;
                       const isActive = step.id === currentStep;
@@ -574,24 +574,24 @@ export default function App() {
                         <div 
                           key={step.id}
                           className={`
-                            flex items-center space-x-3.5 p-3 rounded-2xl transition-all duration-200
+                            flex items-center space-x-3 p-2 rounded-xl transition-all duration-200
                             ${isActive ? 'bg-[#007AFF]/10 border border-[#007AFF]/15' : 'bg-transparent border border-transparent'}
                           `}
                         >
                           <div className={`
-                            w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
+                            w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300
                             ${isCompleted ? 'bg-emerald-500 text-white' : ''}
                             ${isActive ? 'bg-[#007AFF] text-white ring-4 ring-[#007AFF]/10' : ''}
                             ${!isCompleted && !isActive ? 'bg-[#F2F2F7] text-[#8E8E93]' : ''}
                           `}>
-                            {isCompleted ? <Check className="w-4.5 h-4.5 stroke-[3px]" /> : idx + 1}
+                            {isCompleted ? <Check className="w-4 h-4 stroke-[3px]" /> : idx + 1}
                           </div>
                           
                           <div className="text-left">
-                            <p className={`text-sm font-bold leading-tight ${isActive ? 'text-[#007AFF] font-extrabold' : 'text-black'}`}>
+                            <p className={`text-xs font-bold leading-tight ${isActive ? 'text-[#007AFF] font-extrabold' : 'text-black'}`}>
                               {step.label}
                             </p>
-                            <p className={`text-[11px] mt-0.5 font-medium leading-none ${isActive ? 'text-[#007AFF]/85' : 'text-[#8E8E93]'}`}>
+                            <p className={`text-[10px] mt-0.5 font-semibold leading-none ${isActive ? 'text-[#007AFF]/85' : 'text-[#8E8E93]'}`}>
                               {step.subtitle}
                             </p>
                           </div>
@@ -601,13 +601,13 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-[#F2F2F7] border border-[#E5E5EA] rounded-2xl p-4 mt-6">
-                  <div className="flex space-x-2.5 items-start">
-                    <Info className="w-4.5 h-4.5 text-[#007AFF] mt-0.5 flex-shrink-0" />
+                <div className="bg-[#F2F2F7] border border-[#E5E5EA] rounded-2xl p-3.5 mt-4">
+                  <div className="flex space-x-2 items-start">
+                    <Info className="w-4 h-4 text-[#007AFF] mt-0.5 flex-shrink-0" />
                     <div>
                       <h4 className="text-xs font-bold text-[#3A3A3C]">Need Help?</h4>
-                      <p className="text-[11px] text-[#8E8E93] font-medium mt-0.5 leading-relaxed">
-                        Please ask our friendly staff at the front desk if you have any questions during registration.
+                      <p className="text-[10px] text-[#8E8E93] font-semibold mt-0.5 leading-normal">
+                        Please ask our staff at the front desk if you have any questions.
                       </p>
                     </div>
                   </div>
@@ -639,10 +639,10 @@ export default function App() {
               )}
 
               {/* CARD ENVELOPE */}
-              <div className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-xl overflow-hidden flex flex-col justify-between min-h-[380px] md:min-h-[480px]">
+              <div className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-xl overflow-hidden flex flex-col justify-between min-h-[320px] md:min-h-[400px]">
                 
                 {/* WIZARD CONTENT - ANIMATED STEP TRANSITION */}
-                <div className="p-6 md:p-10 flex-grow relative overflow-hidden">
+                <div className="p-5 md:p-6 flex-grow relative overflow-hidden">
                   <AnimatePresence mode="wait" custom={direction}>
                     <motion.div
                       key={currentStep}
@@ -778,14 +778,14 @@ export default function App() {
 
                       {/* STEP 3: MEMBERSHIP PACKAGE */}
                       {currentStep === 'membership_package' && (
-                        <div className="space-y-6" id="step-membership-package">
+                        <div className="space-y-4" id="step-membership-package">
                           <div>
                             <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest">Plan Option</span>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight mt-1">Select Membership</h2>
-                            <p className="text-sm text-[#8E8E93] mt-1 font-medium">Find the plan that best fits your fitness goals.</p>
+                            <h2 className="text-xl md:text-2xl font-extrabold text-black tracking-tight mt-0.5">Select Membership</h2>
+                            <p className="text-xs text-[#8E8E93] mt-0.5 font-medium">Find the plan that best fits your fitness goals.</p>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {MEMBERSHIP_PACKAGES.map((pkg) => {
                               const isSelected = formData.packageId === pkg.id;
                               return (
@@ -795,34 +795,34 @@ export default function App() {
                                   type="button"
                                   onClick={() => setFormData({ ...formData, packageId: pkg.id })}
                                   className={`
-                                    relative flex flex-col justify-between text-left p-4 rounded-2xl border-2 transition-all cursor-pointer h-full
+                                    relative flex flex-col justify-between text-left p-3.5 rounded-xl border-2 transition-all cursor-pointer h-full
                                     ${isSelected ? 'border-[#007AFF] ring-4 ring-[#007AFF]/10 bg-[#007AFF]/5' : 'border-[#E5E5EA] hover:border-[#C6C6C8] bg-white'}
                                   `}
                                 >
                                   {isSelected && (
-                                    <div className="absolute top-3 right-3 bg-[#007AFF] text-white rounded-full p-1 shadow-sm z-10">
-                                      <Check className="w-3.5 h-3.5 stroke-[3px]" />
+                                    <div className="absolute top-2.5 right-2.5 bg-[#007AFF] text-white rounded-full p-0.5 shadow-sm z-10">
+                                      <Check className="w-3 h-3 stroke-[3px]" />
                                     </div>
                                   )}
 
                                   <div>
                                     <div className="flex items-center space-x-1.5">
-                                      <span className={`text-[10px] font-extrabold tracking-wider px-2 py-0.5 rounded-full uppercase ${pkg.colorTheme.badge}`}>
+                                      <span className={`text-[9px] font-extrabold tracking-wider px-2 py-0.5 rounded-full uppercase ${pkg.colorTheme.badge}`}>
                                         {pkg.name}
                                       </span>
                                       {pkg.durationDays >= 7 && (
-                                        <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                                        <span className="text-[9px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
                                           Best Value
                                         </span>
                                       )}
                                     </div>
-                                    <h3 className="font-extrabold text-base text-black mt-1.5 leading-tight">{pkg.name}</h3>
-                                    <p className="text-xs text-[#8E8E93] mt-0.5 font-medium">{pkg.discountNote}</p>
+                                    <h3 className="font-extrabold text-sm text-black mt-1 leading-tight">{pkg.name}</h3>
+                                    <p className="text-[11px] text-[#8E8E93] mt-0.5 font-semibold">{pkg.discountNote}</p>
                                   </div>
 
-                                  <div className="mt-4 pt-3 border-t border-[#E5E5EA] flex items-baseline space-x-1">
-                                    <span className="text-xl font-black text-black leading-none">{pkg.priceDisplay}</span>
-                                    <span className="text-[#8E8E93] text-[10px] font-bold">/ {pkg.durationDisplay}</span>
+                                  <div className="mt-3 pt-2 border-t border-[#E5E5EA] flex items-baseline space-x-1">
+                                    <span className="text-lg font-black text-black leading-none">{pkg.priceDisplay}</span>
+                                    <span className="text-[#8E8E93] text-[9px] font-bold">/ {pkg.durationDisplay}</span>
                                   </div>
                                 </button>
                               );
@@ -834,9 +834,9 @@ export default function App() {
                             const selectedPkg = MEMBERSHIP_PACKAGES.find(p => p.id === formData.packageId);
                             if (!selectedPkg) return null;
                             return (
-                              <div className="bg-[#F2F2F7] rounded-2xl p-4 border border-[#E5E5EA] mt-2">
-                                <h4 className="text-xs font-bold text-[#3A3A3C] uppercase tracking-wider mb-2">Benefits of {selectedPkg.name}:</h4>
-                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-[#3A3A3C] font-semibold">
+                              <div className="bg-[#F2F2F7] rounded-2xl p-3.5 border border-[#E5E5EA] mt-1.5">
+                                <h4 className="text-xs font-bold text-[#3A3A3C] uppercase tracking-wider mb-1.5">Benefits of {selectedPkg.name}:</h4>
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-[#3A3A3C] font-semibold">
                                   {selectedPkg.features.map((feature, i) => (
                                     <li key={i} className="flex items-center space-x-1.5">
                                       <div className="w-1.5 h-1.5 rounded-full bg-[#007AFF] flex-shrink-0" />
@@ -1022,54 +1022,54 @@ export default function App() {
 
                       {/* STEP 5: SUMMARY & T&C */}
                       {currentStep === 'summary' && (
-                        <div className="space-y-6" id="step-summary">
+                        <div className="space-y-4" id="step-summary">
                           <div>
                             <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest">Final Step</span>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight mt-1">Confirm Registration</h2>
-                            <p className="text-sm text-[#8E8E93] mt-1 font-medium">Please review your details before completing your registration.</p>
+                            <h2 className="text-xl md:text-2xl font-extrabold text-black tracking-tight mt-0.5">Confirm Registration</h2>
+                            <p className="text-xs text-[#8E8E93] mt-0.5 font-medium">Please review your details before completing your registration.</p>
                           </div>
 
-                          <div className="space-y-5">
+                          <div className="space-y-3.5">
                             {/* Cupertino Grouped List Style */}
                             <div className="bg-[#F2F2F7] rounded-2xl border border-[#E5E5EA] divide-y divide-[#E5E5EA] overflow-hidden">
-                              <div className="flex justify-between items-center p-3.5 px-4">
-                                <span className="text-xs font-bold text-[#8E8E93] uppercase">Full Name</span>
-                                <span className="text-sm font-extrabold text-black uppercase">{formData.name}</span>
+                              <div className="flex justify-between items-center py-2.5 px-3.5">
+                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Full Name</span>
+                                <span className="text-xs md:text-sm font-extrabold text-black uppercase">{formData.name}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3.5 px-4">
-                                <span className="text-xs font-bold text-[#8E8E93] uppercase">Gender / Date of Birth</span>
-                                <span className="text-sm font-bold text-black">{formData.gender} • {formData.dob}</span>
+                              <div className="flex justify-between items-center py-2.5 px-3.5">
+                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Gender / Date of Birth</span>
+                                <span className="text-xs md:text-sm font-bold text-black">{formData.gender} • {formData.dob}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3.5 px-4">
-                                <span className="text-xs font-bold text-[#8E8E93] uppercase">Email</span>
-                                <span className="text-sm font-bold text-black">{formData.email}</span>
+                              <div className="flex justify-between items-center py-2.5 px-3.5">
+                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Email</span>
+                                <span className="text-xs md:text-sm font-bold text-black">{formData.email}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3.5 px-4">
-                                <span className="text-xs font-bold text-[#8E8E93] uppercase">Phone / WhatsApp</span>
-                                <span className="text-sm font-bold text-black">{countryCode} {formData.phone}</span>
+                              <div className="flex justify-between items-center py-2.5 px-3.5">
+                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Phone / WhatsApp</span>
+                                <span className="text-xs md:text-sm font-bold text-black">{countryCode} {formData.phone}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3.5 px-4">
-                                <span className="text-xs font-bold text-[#8E8E93] uppercase">Selected Plan</span>
-                                <span className="text-sm font-extrabold text-[#007AFF]">
+                              <div className="flex justify-between items-center py-2.5 px-3.5">
+                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Selected Plan</span>
+                                <span className="text-xs md:text-sm font-extrabold text-[#007AFF]">
                                   {MEMBERSHIP_PACKAGES.find(p => p.id === formData.packageId)?.name}
                                 </span>
                               </div>
-                              <div className="flex justify-between items-center p-3.5 px-4">
-                                <span className="text-xs font-bold text-[#8E8E93] uppercase">Membership Cost</span>
-                                <span className="text-sm font-black text-black">
+                              <div className="flex justify-between items-center py-2.5 px-3.5">
+                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Membership Cost</span>
+                                <span className="text-xs md:text-sm font-black text-black">
                                   {MEMBERSHIP_PACKAGES.find(p => p.id === formData.packageId)?.priceDisplay}
                                 </span>
                               </div>
-                              <div className="flex justify-between items-center p-3.5 px-4">
-                                <span className="text-xs font-bold text-[#8E8E93] uppercase">How You Found Us</span>
-                                <span className="text-sm font-bold text-black capitalize">
+                              <div className="flex justify-between items-center py-2.5 px-3.5">
+                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">How You Found Us</span>
+                                <span className="text-xs md:text-sm font-bold text-black capitalize">
                                   {SOURCE_INFO_OPTIONS.find(o => o.id === formData.sourceInfo)?.label.split(' / ')[0]}
                                 </span>
                               </div>
                               {formData.sourceInfo === 'referral' && (
-                                <div className="flex justify-between items-center p-3.5 px-4 bg-[#007AFF]/5">
-                                  <span className="text-xs font-bold text-[#007AFF] uppercase">Referring Friend (Referral)</span>
-                                  <span className="text-sm font-bold text-[#007AFF] uppercase">{formData.referralName}</span>
+                                <div className="flex justify-between items-center py-2.5 px-3.5 bg-[#007AFF]/5">
+                                  <span className="text-[11px] font-bold text-[#007AFF] uppercase">Referring Friend (Referral)</span>
+                                  <span className="text-xs md:text-sm font-bold text-[#007AFF] uppercase">{formData.referralName}</span>
                                 </div>
                               )}
                             </div>
@@ -1083,7 +1083,7 @@ export default function App() {
                                   if (val) setErrors({ ...errors, terms: '' });
                               }}
                               label="I agree to the Terms & Conditions"
-                              description="I agree to the gym rules, locker room usage guidelines, equipment code of conduct, and fee cancellation policies."
+                              description="I agree to the gym rules, equipment conduct, and cancellation policies."
                             />
                             {errors.terms && (
                               <p className="text-xs font-medium text-red-500 px-1">{errors.terms}</p>
@@ -1139,21 +1139,21 @@ export default function App() {
 
                 {/* BOTTOM ACTION BAR - EXCLUDING SUCCESS STEP */}
                 {currentStep !== 'success' && (
-                  <div className="bg-[#F2F2F7] px-6 py-4 md:px-10 md:py-6 border-t border-[#E5E5EA] flex items-center justify-between">
+                  <div className="bg-[#F2F2F7] px-5 py-3 md:px-6 md:py-3.5 border-t border-[#E5E5EA] flex items-center justify-between">
                     <div>
                       {currentStepIndex > 0 ? (
                         <button
                           id="btn-back"
                           type="button"
                           onClick={handleBack}
-                          className="h-14 px-6 bg-white border border-[#E5E5EA] text-[#007AFF] font-bold rounded-xl text-base hover:border-[#C6C6C8] transition flex items-center space-x-2 shadow-sm active:scale-95 cursor-pointer"
+                          className="h-11 px-4.5 bg-white border border-[#E5E5EA] text-[#007AFF] font-bold rounded-xl text-sm hover:border-[#C6C6C8] transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
                         >
-                          <ArrowLeft className="w-5 h-5" />
+                          <ArrowLeft className="w-4.5 h-4.5" />
                           <span className="hidden sm:inline">Back</span>
                         </button>
                       ) : (
-                        <div className="text-xs text-[#8E8E93] font-bold">
-                          PulseGym Kiosk v2.4
+                        <div className="text-[10px] text-[#8E8E93] font-bold uppercase tracking-wider">
+                          POWERHUB KIOSK
                         </div>
                       )}
                     </div>
@@ -1165,8 +1165,8 @@ export default function App() {
                           <div 
                             key={step.id} 
                             className={`
-                              w-2 h-2 rounded-full transition-all duration-300
-                              ${idx === currentStepIndex ? 'w-5 bg-[#007AFF]' : 'bg-[#C6C6C8]'}
+                              w-1.5 h-1.5 rounded-full transition-all duration-300
+                              ${idx === currentStepIndex ? 'w-4.5 bg-[#007AFF]' : 'bg-[#C6C6C8]'}
                             `}
                           />
                         ))}
@@ -1177,10 +1177,10 @@ export default function App() {
                           id="btn-submit"
                           type="button"
                           onClick={handleSubmit}
-                          className="h-14 px-8 bg-[#007AFF] hover:bg-[#0062CC] text-white font-extrabold rounded-xl text-base shadow-md transition flex items-center space-x-2 active:scale-95 cursor-pointer"
+                          className="h-11 px-6 bg-[#007AFF] hover:bg-[#0062CC] text-white font-extrabold rounded-xl text-sm shadow-md transition flex items-center space-x-1.5 active:scale-95 cursor-pointer"
                         >
                           <span>Activate Membership</span>
-                          <Check className="w-5 h-5 stroke-[3px]" />
+                          <Check className="w-4.5 h-4.5 stroke-[3px]" />
                         </button>
                       ) : currentStep === 'payment' ? (
                         <button
@@ -1188,24 +1188,24 @@ export default function App() {
                           type="button"
                           disabled={paymentState !== 'success'}
                           onClick={handleNext}
-                          className={`h-14 px-8 font-extrabold rounded-xl text-base shadow-md transition flex items-center space-x-2 cursor-pointer ${
+                          className={`h-11 px-6 font-extrabold rounded-xl text-sm shadow-md transition flex items-center space-x-1.5 cursor-pointer ${
                             paymentState === 'success' 
                               ? 'bg-[#007AFF] hover:bg-[#0062CC] text-white active:scale-95' 
                               : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                           }`}
                         >
                           <span>{paymentState === 'success' ? 'Continue' : 'Waiting for Payment...'}</span>
-                          <ArrowRight className="w-5 h-5" />
+                          <ArrowRight className="w-4.5 h-4.5" />
                         </button>
                       ) : (
                         <button
                           id="btn-next"
                           type="button"
                           onClick={handleNext}
-                          className="h-14 px-8 bg-[#007AFF] hover:bg-[#0062CC] text-white font-extrabold rounded-xl text-base shadow-md transition flex items-center space-x-2 active:scale-95 cursor-pointer"
+                          className="h-11 px-6 bg-[#007AFF] hover:bg-[#0062CC] text-white font-extrabold rounded-xl text-sm shadow-md transition flex items-center space-x-1.5 active:scale-95 cursor-pointer"
                         >
                           <span>Next</span>
-                          <ArrowRight className="w-5 h-5" />
+                          <ArrowRight className="w-4.5 h-4.5" />
                         </button>
                       )}
                     </div>

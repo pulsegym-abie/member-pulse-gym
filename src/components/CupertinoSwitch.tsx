@@ -18,13 +18,13 @@ export const CupertinoSwitch: React.FC<CupertinoSwitchProps> = ({
 }) => {
   return (
     <div 
-      className="flex items-start justify-between p-4 bg-white rounded-2xl border border-[#E5E5EA] shadow-sm active:bg-[#F2F2F7] transition-colors cursor-pointer"
+      className="flex items-start justify-between p-3 bg-white rounded-2xl border border-[#E5E5EA] shadow-sm active:bg-[#F2F2F7] transition-colors cursor-pointer"
       onClick={() => onChange(!checked)}
       id={id}
     >
       <div className="flex flex-col space-y-0.5 pr-4 select-none">
-        <span className="text-base font-bold text-black">{label}</span>
-        {description && <span className="text-sm text-[#8E8E93] font-medium leading-relaxed">{description}</span>}
+        <span className="text-sm font-bold text-black">{label}</span>
+        {description && <span className="text-xs text-[#8E8E93] font-semibold leading-relaxed">{description}</span>}
       </div>
       <div 
         className={`
