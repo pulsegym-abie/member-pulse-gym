@@ -160,24 +160,33 @@ export const MembershipCardView: React.FC<MembershipCardViewProps> = ({
         className="w-[90%] -mt-6 bg-white rounded-b-2xl border-x border-b border-slate-100 shadow-lg px-6 pt-10 pb-5 flex flex-col items-center space-y-4 text-center z-0"
       >
         <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest">
-          SCAN AT CHECK-IN
+          SCAN QR CODE TO VISIT WEBSITE
         </p>
 
-        {/* Vector Barcode Design */}
-        <div className="flex flex-col items-center space-y-1.5 w-full">
-          <div className="h-14 flex items-center justify-center bg-slate-50 px-4 py-2 rounded-lg w-full">
-            <div className="flex items-center space-x-[2px] h-full">
-              {barcodeBars.map((width, index) => (
-                <div
-                  key={index}
-                  className="bg-slate-900 h-full"
-                  style={{ width: `${width}px` }}
-                />
-              ))}
+        {/* Dynamic QR Code Design */}
+        <div className="flex flex-col items-center space-y-2 w-full">
+          <a 
+            href="https://pulsepowerhub.id" 
+            target="_blank" 
+            referrerPolicy="no-referrer"
+            rel="noopener noreferrer"
+            className="group relative flex flex-col items-center justify-center p-3 bg-slate-50 hover:bg-[#007AFF]/5 rounded-2xl transition border border-slate-100 hover:border-[#007AFF]/20 shadow-sm cursor-pointer"
+            title="Click to visit pulsepowerhub.id"
+          >
+            <img 
+              src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fpulsepowerhub.id" 
+              alt="https://pulsepowerhub.id" 
+              className="w-32 h-32 md:w-36 md:h-36 object-contain rounded-lg transition-transform group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <span className="text-white text-[11px] font-extrabold tracking-wider bg-[#007AFF] px-3 py-1.5 rounded-full shadow-md flex items-center space-x-1">
+                <span>Visit Site</span>
+                <Sparkles className="w-3.5 h-3.5" />
+              </span>
             </div>
-          </div>
-          <span className="font-mono text-xs tracking-[0.25em] text-slate-500 font-bold">
-            *{registration.id}*
+          </a>
+          <span className="font-mono text-[10px] tracking-wider text-slate-400 font-bold">
+            https://pulsepowerhub.id
           </span>
         </div>
 

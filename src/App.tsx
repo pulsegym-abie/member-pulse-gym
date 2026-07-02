@@ -1125,9 +1125,10 @@ export default function App() {
                             <button
                               id="btn-register-another"
                               onClick={handleResetForm}
-                              className="flex-1 h-12 bg-[#007AFF] hover:bg-[#0062CC] text-white font-extrabold rounded-xl text-sm shadow-md transition active:scale-95 cursor-pointer"
+                              className="flex-1 h-12 bg-[#007AFF] hover:bg-[#0062CC] text-white font-extrabold rounded-xl text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center space-x-1"
                             >
-                              Register Another Member
+                              <span>Done</span>
+                              <Check className="w-4 h-4 stroke-[2.5]" />
                             </button>
                           </div>
                         </div>
