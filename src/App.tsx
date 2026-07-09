@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, Mail, Phone, Calendar, ArrowLeft, ArrowRight, Check, 
   CheckCircle2, Dumbbell, Users, Search, Trash2, Download, 
-  Sparkles, ChevronRight, Info, RefreshCw, X, CreditCard, Loader2
+  Sparkles, ChevronRight, Info, RefreshCw, X, CreditCard, Loader2,
+  Camera, CameraOff, Upload
 } from 'lucide-react';
 import { GymRegistration, StepId, GenderType } from './types';
 import { MEMBERSHIP_PACKAGES, SOURCE_INFO_OPTIONS } from './data';
@@ -96,6 +97,13 @@ export default function App() {
   // Created Member for success step
   const [latestMember, setLatestMember] = useState<GymRegistration | null>(null);
 
+  // Selfie Photo States
+  const [selfiePhoto, setSelfiePhoto] = useState<string | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
   // --- PERSISTENCE ---
   useEffect(() => {
     // Load from local storage
@@ -113,6 +121,96 @@ export default function App() {
     setAllRegistrations(newList);
     localStorage.setItem('pulsegym_registrations', JSON.stringify(newList));
   };
+
+  // --- CAMERA HELPERS FOR SELFIE ---
+  const startCamera = async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 320, height: 320, facingMode: "user" },
+        audio: false
+      });
+      setCameraStream(stream);
+      setIsCameraActive(true);
+      
+      // Delay slightly to ensure video element is mounted and ready
+      setTimeout(() => {
+        const videoElement = document.getElementById('selfie-video') as HTMLVideoElement;
+        if (videoElement) {
+          videoElement.srcObject = stream;
+          videoElement.play().catch(err => console.error("Video play failed:", err));
+        }
+      }, 100);
+    } catch (err: any) {
+      console.error("Camera access failed:", err);
+      setCameraError("Camera access is blocked or not supported on this device/browser. Please upload a photo from your library instead.");
+      setIsCameraActive(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setIsCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    const videoElement = document.getElementById('selfie-video') as HTMLVideoElement;
+    if (videoElement) {
+      const canvas = document.createElement('canvas');
+      // We want a square capture
+      const size = Math.min(videoElement.videoWidth, videoElement.videoHeight) || 320;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Draw image centered and cropped as a square
+        const sx = (videoElement.videoWidth - size) / 2;
+        const sy = (videoElement.videoHeight - size) / 2;
+        ctx.drawImage(videoElement, sx, sy, size, size, 0, 0, size, size);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setCapturedImage(dataUrl);
+        setSelfiePhoto(dataUrl);
+        stopCamera();
+      }
+    }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const dataUrl = event.target.result as string;
+          setCapturedImage(dataUrl);
+          setSelfiePhoto(dataUrl);
+          stopCamera();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Stop camera if user navigates away or auto-start if on selfie step
+  useEffect(() => {
+    if (currentStep !== 'selfie') {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
+      setIsCameraActive(false);
+    } else {
+      startCamera();
+    }
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [currentStep]);
 
   // --- VALIDATION HELPERS ---
   const validateStep = (step: StepId): boolean => {
@@ -209,6 +307,8 @@ export default function App() {
       setCurrentStep('payment');
     } else if (currentStep === 'summary') {
       setCurrentStep('referral_source');
+    } else if (currentStep === 'selfie') {
+      setCurrentStep('summary');
     }
   };
 
@@ -219,6 +319,12 @@ export default function App() {
       return;
     }
 
+    setDirection(1);
+    setCurrentStep('selfie');
+  };
+
+  // --- COMPLETE AND SAVE REGISTRATION ---
+  const handleCompleteRegistration = (photoToSave: string | null) => {
     const pkg = MEMBERSHIP_PACKAGES.find(p => p.id === formData.packageId) || MEMBERSHIP_PACKAGES[1];
     
     // Calculate dates
@@ -238,6 +344,7 @@ export default function App() {
       packageId: formData.packageId,
       sourceInfo: formData.sourceInfo,
       referralName: formData.sourceInfo === 'referral' ? formData.referralName : undefined,
+      photoBase64: photoToSave || undefined,
       registrationDate: regDateObj.toISOString().split('T')[0],
       expirationDate: expDateObj.toISOString().split('T')[0],
       status: 'Active'
@@ -268,6 +375,9 @@ export default function App() {
     setPaymentState('idle');
     setErrors({});
     setLatestMember(null);
+    setSelfiePhoto(null);
+    setCapturedImage(null);
+    setCameraError(null);
     setDirection(-1);
     setCurrentStep('personal_info');
   };
@@ -336,7 +446,8 @@ export default function App() {
     { id: 'membership_package', label: 'Plan', subtitle: 'Select Membership' },
     { id: 'payment', label: 'Payment', subtitle: 'EDC Terminal' },
     { id: 'referral_source', label: 'Discovery', subtitle: 'How You Found Us' },
-    { id: 'summary', label: 'Confirm', subtitle: 'Final Review' }
+    { id: 'summary', label: 'Confirm', subtitle: 'Final Review' },
+    { id: 'selfie', label: 'ID Photo', subtitle: 'Take a Selfie' }
   ];
 
   // Map Step to Index
@@ -487,13 +598,24 @@ export default function App() {
                       return (
                         <tr key={m.id} className="hover:bg-[#F2F2F7]/50 transition">
                           <td className="p-4">
-                            <span className="font-mono text-xs bg-[#F2F2F7] text-black font-bold px-2 py-0.5 rounded border border-[#E5E5EA]">
-                              {m.id}
-                            </span>
-                            <div className="font-extrabold text-black mt-1 uppercase text-base">{m.name}</div>
-                            <span className="text-[10px] bg-[#007AFF]/10 text-[#007AFF] px-1.5 py-0.5 rounded font-extrabold">
-                              {m.gender} • DOB: {m.dob}
-                            </span>
+                            <div className="flex items-center space-x-3">
+                              {m.photoBase64 ? (
+                                <img src={m.photoBase64} alt={m.name} className="w-11 h-11 rounded-full object-cover border border-[#E5E5EA] shadow-sm flex-shrink-0" />
+                              ) : (
+                                <div className="w-11 h-11 rounded-full bg-[#F2F2F7] border border-[#E5E5EA] flex items-center justify-center text-[#8E8E93] flex-shrink-0">
+                                  <User className="w-5 h-5" />
+                                </div>
+                              )}
+                              <div>
+                                <span className="font-mono text-[10px] bg-[#F2F2F7] text-black font-bold px-1.5 py-0.5 rounded border border-[#E5E5EA]">
+                                  {m.id}
+                                </span>
+                                <div className="font-extrabold text-black mt-0.5 uppercase text-sm">{m.name}</div>
+                                <span className="text-[10px] bg-[#007AFF]/10 text-[#007AFF] px-1.5 py-0.5 rounded font-extrabold">
+                                  {m.gender} • DOB: {m.dob}
+                                </span>
+                              </div>
+                            </div>
                           </td>
                           <td className="p-4 text-xs font-medium">
                             <div className="flex items-center space-x-1.5 text-black">
@@ -622,7 +744,7 @@ export default function App() {
                 <div className="md:hidden bg-white p-4 rounded-2xl border border-[#E5E5EA] shadow-sm mb-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest">
-                      Step {currentStepIndex + 1} of 5
+                      Step {currentStepIndex + 1} of {stepsList.length}
                     </span>
                     <span className="text-sm font-bold text-black">
                       {stepsList[currentStepIndex].label}
@@ -632,7 +754,7 @@ export default function App() {
                   <div className="w-full bg-[#F2F2F7] h-2 rounded-full mt-2 overflow-hidden">
                     <div 
                       className="bg-[#007AFF] h-full rounded-full transition-all duration-300"
-                      style={{ width: `${((currentStepIndex + 1) / 5) * 100}%` }}
+                      style={{ width: `${((currentStepIndex + 1) / stepsList.length) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -1092,6 +1214,123 @@ export default function App() {
                         </div>
                       )}
 
+                      {/* STEP: SELFIE CAPTURE */}
+                      {currentStep === 'selfie' && (
+                        <div className="space-y-4" id="step-selfie">
+                          <div>
+                            <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest">Member Identification</span>
+                            <h2 className="text-xl md:text-2xl font-extrabold text-black tracking-tight mt-0.5">Take ID Photo</h2>
+                            <p className="text-xs text-[#8E8E93] mt-0.5 font-medium">Capture a selfie or upload a photo to display on your digital membership card.</p>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                            {/* Photo capture/preview area */}
+                            <div className="flex flex-col items-center justify-center bg-slate-50 border border-[#E5E5EA] rounded-2xl p-4 min-h-[260px] relative overflow-hidden shadow-inner">
+                              {capturedImage ? (
+                                <div className="relative w-44 h-44 rounded-full border-4 border-white shadow-lg overflow-hidden group">
+                                  <img src={capturedImage} alt="Captured Selfie" className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <span className="text-xs font-bold text-white uppercase tracking-wider">Captured!</span>
+                                  </div>
+                                </div>
+                              ) : isCameraActive ? (
+                                <div className="relative w-44 h-44 rounded-full border-4 border-[#007AFF]/30 overflow-hidden bg-black flex items-center justify-center shadow-lg">
+                                  <video id="selfie-video" className="w-full h-full object-cover transform scale-x-[-1]" playsInline muted />
+                                  {/* Face target guide overlay */}
+                                  <div className="absolute inset-0 border-[3px] border-dashed border-white/45 rounded-full pointer-events-none scale-90" />
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center text-slate-400 space-y-2 py-8">
+                                  <div className="w-14 h-14 bg-slate-200/60 rounded-full flex items-center justify-center text-slate-400">
+                                    <CameraOff className="w-6 h-6" />
+                                  </div>
+                                  <p className="text-xs font-semibold text-slate-500 text-center max-w-[200px]">Camera is offline</p>
+                                </div>
+                              )}
+
+                              {cameraError && !capturedImage && !isCameraActive && (
+                                <p className="text-[10px] text-amber-600 font-semibold text-center mt-2 px-4 max-w-xs bg-amber-50 border border-amber-100 p-2 rounded-xl">
+                                  {cameraError}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Camera Actions & File Fallback */}
+                            <div className="flex flex-col space-y-3">
+                              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Options</h3>
+                              
+                              {/* Web Cam Capture controls */}
+                              {!capturedImage && (
+                                <>
+                                  {isCameraActive ? (
+                                    <button
+                                      type="button"
+                                      onClick={capturePhoto}
+                                      className="w-full h-11 bg-[#007AFF] hover:bg-[#0062CC] text-white font-extrabold rounded-xl text-xs transition active:scale-95 cursor-pointer flex items-center justify-center space-x-2 shadow-md uppercase tracking-wider"
+                                    >
+                                      <Camera className="w-4.5 h-4.5" />
+                                      <span>Capture ID Photo</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={startCamera}
+                                      className="w-full h-11 bg-white border border-[#E5E5EA] text-[#007AFF] font-bold rounded-xl text-xs transition hover:border-[#C6C6C8] active:scale-95 cursor-pointer flex items-center justify-center space-x-2 shadow-sm uppercase tracking-wider"
+                                    >
+                                      <RefreshCw className="w-4 h-4" />
+                                      <span>Retry Camera</span>
+                                    </button>
+                                  )}
+                                </>
+                              )}
+
+                              {capturedImage && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCapturedImage(null);
+                                    setSelfiePhoto(null);
+                                    startCamera();
+                                  }}
+                                  className="w-full h-11 bg-white border border-[#E5E5EA] text-[#3A3A3C] font-bold rounded-xl text-xs transition hover:border-[#C6C6C8] active:scale-95 cursor-pointer flex items-center justify-center space-x-2 shadow-sm uppercase tracking-wider"
+                                >
+                                  <RefreshCw className="w-4 h-4 text-[#007AFF]" />
+                                  <span>Retake Photo</span>
+                                </button>
+                              )}
+
+                              {/* Cupertino file upload fallback */}
+                              <div className="relative">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  id="selfie-file-input"
+                                  onChange={handlePhotoUpload}
+                                  className="hidden"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => document.getElementById('selfie-file-input')?.click()}
+                                  className="w-full h-11 bg-[#F2F2F7] hover:bg-[#E5E5EA] text-[#3A3A3C] font-bold rounded-xl text-xs transition active:scale-95 cursor-pointer flex items-center justify-center space-x-2 border border-[#E5E5EA] uppercase tracking-wider"
+                                >
+                                  <Upload className="w-4 h-4 text-slate-500" />
+                                  <span>Upload Photo</span>
+                                </button>
+                              </div>
+
+                              <div className="bg-[#007AFF]/5 border border-[#007AFF]/15 rounded-xl p-3 text-left">
+                                <div className="flex space-x-2 items-start">
+                                  <Sparkles className="w-4 h-4 text-[#007AFF] mt-0.5 flex-shrink-0" />
+                                  <p className="text-[10px] text-[#007AFF] font-semibold leading-normal">
+                                    Gym receptionists require a clear front-facing ID photo to verify member check-ins.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* STEP 6: SUCCESS & MEMBER CARD */}
                       {currentStep === 'success' && latestMember && (
                         <div className="space-y-5 text-center py-2" id="step-success">
@@ -1180,6 +1419,20 @@ export default function App() {
                           className="h-11 px-6 bg-[#007AFF] hover:bg-[#0062CC] text-white font-extrabold rounded-xl text-sm shadow-md transition flex items-center space-x-1.5 active:scale-95 cursor-pointer"
                         >
                           <span>Activate Membership</span>
+                          <Check className="w-4.5 h-4.5 stroke-[3px]" />
+                        </button>
+                      ) : currentStep === 'selfie' ? (
+                        <button
+                          id="btn-complete-selfie"
+                          type="button"
+                          onClick={() => handleCompleteRegistration(selfiePhoto)}
+                          className={`h-11 px-6 font-extrabold rounded-xl text-sm shadow-md transition flex items-center space-x-1.5 cursor-pointer ${
+                            selfiePhoto 
+                              ? 'bg-[#007AFF] hover:bg-[#0062CC] text-white active:scale-95' 
+                              : 'bg-white border border-[#E5E5EA] text-slate-500 hover:border-[#C6C6C8] active:scale-95'
+                          }`}
+                        >
+                          <span>{selfiePhoto ? 'Generate Card' : 'Skip & Generate Card'}</span>
                           <Check className="w-4.5 h-4.5 stroke-[3px]" />
                         </button>
                       ) : currentStep === 'payment' ? (

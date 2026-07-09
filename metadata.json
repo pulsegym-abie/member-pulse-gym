@@ -1,6 +1,6 @@
 {
   "name": "Form Registrasi Member Gym",
   "description": "Formulir pendaftaran anggota gym berbasis tablet dengan antarmuka Cupertino iOS yang responsif, navigasi intuitif, tombol besar, dan animasi transisi halus.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

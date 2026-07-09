@@ -34,12 +34,13 @@ export interface GymRegistration {
   packageId: string;
   sourceInfo: string;
   referralName?: string;
+  photoBase64?: string;
   registrationDate: string;
   expirationDate: string;
   status: 'Active' | 'Pending';
 }
 
-export type StepId = 'personal_info' | 'contact_info' | 'membership_package' | 'payment' | 'referral_source' | 'summary' | 'success';
+export type StepId = 'personal_info' | 'contact_info' | 'membership_package' | 'payment' | 'referral_source' | 'summary' | 'selfie' | 'success';
 
 export interface RegistrationStep {
   id: StepId;

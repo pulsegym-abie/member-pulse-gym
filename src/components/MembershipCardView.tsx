@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { GymRegistration, MembershipPackage } from '../types';
 import { MEMBERSHIP_PACKAGES } from '../data';
-import { Dumbbell, ShieldCheck, QrCode, Calendar, Sparkles, Smartphone } from 'lucide-react';
+import { Dumbbell, ShieldCheck, QrCode, Calendar, Sparkles, Smartphone, User } from 'lucide-react';
 
 interface MembershipCardViewProps {
   registration: GymRegistration;
@@ -122,11 +122,22 @@ export const MembershipCardView: React.FC<MembershipCardViewProps> = ({
         </div>
 
         {/* Middle bar of pass */}
-        <div className="my-3 z-10">
-          <p className="text-[10px] font-bold tracking-widest text-white/60 uppercase">MEMBER NAME</p>
-          <h2 className="text-lg md:text-xl font-extrabold tracking-tight mt-0.5 truncate uppercase">
-            {registration.name}
-          </h2>
+        <div className="flex items-center justify-between my-3 z-10 space-x-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold tracking-widest text-white/60 uppercase">MEMBER NAME</p>
+            <h2 className="text-lg md:text-xl font-extrabold tracking-tight mt-0.5 truncate uppercase">
+              {registration.name}
+            </h2>
+          </div>
+          {registration.photoBase64 ? (
+            <div className="w-14 h-14 rounded-xl border-2 border-white/30 overflow-hidden bg-black/20 flex-shrink-0 shadow-md">
+              <img src={registration.photoBase64} alt={registration.name} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-14 h-14 rounded-xl border border-white/20 overflow-hidden bg-white/10 flex-shrink-0 flex items-center justify-center">
+              <User className="w-6 h-6 text-white/60" />
+            </div>
+          )}
         </div>
 
         {/* Bottom bar of pass */}
