@@ -9,14 +9,15 @@ import {
   User, Mail, Phone, Calendar, ArrowLeft, ArrowRight, Check, 
   CheckCircle2, Dumbbell, Users, Search, Trash2, Download, 
   Sparkles, ChevronRight, Info, RefreshCw, X, CreditCard, Loader2,
-  Camera, CameraOff, Upload
+  Camera, CameraOff, Upload, LayoutDashboard, Lock, Unlock, LogOut, DollarSign, Activity, TrendingUp
 } from 'lucide-react';
-import { GymRegistration, StepId, GenderType } from './types';
+import { GymRegistration, StepId, GenderType, Expense, DateRange } from './types';
 import { MEMBERSHIP_PACKAGES, SOURCE_INFO_OPTIONS } from './data';
 import { CupertinoInput } from './components/CupertinoInput';
 import { CupertinoSegmentedControl } from './components/CupertinoSegmentedControl';
 import { CupertinoSwitch } from './components/CupertinoSwitch';
 import { MembershipCardView } from './components/MembershipCardView';
+import AdminStatsAndCharts from './components/AdminStatsAndCharts';
 
 // Common country codes for expats
 const COUNTRY_CODES = [
@@ -69,11 +70,19 @@ const generateMemberID = (packageId: string) => {
 
 export default function App() {
   // --- STATE ---
+  const [currentView, setCurrentView] = useState<'portal' | 'member' | 'dashboard'>('portal');
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [passcode, setPasscode] = useState<string>('');
+  const [loginError, setLoginError] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<StepId>('personal_info');
   const [direction, setDirection] = useState<number>(1); // 1 = forward, -1 = backward
   const [agreedTerms, setAgreedTerms] = useState<boolean>(false);
   const [allRegistrations, setAllRegistrations] = useState<GymRegistration[]>([]);
-  const [showStaffPanel, setShowStaffPanel] = useState<boolean>(false);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    startDate: '',
+    endDate: ''
+  });
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'processing' | 'success'>('idle');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterPackage, setFilterPackage] = useState<string>('all');
@@ -104,22 +113,183 @@ export default function App() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
-  // --- PERSISTENCE ---
+  // --- PERSISTENCE & DATA SEEDING ---
   useEffect(() => {
-    // Load from local storage
-    const saved = localStorage.getItem('pulsegym_registrations');
-    if (saved) {
+    // 1. Set Initial 30-Day Date Range Filter
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    setDateRange({
+      startDate: thirtyDaysAgo.toISOString().split('T')[0],
+      endDate: today.toISOString().split('T')[0]
+    });
+
+    // 2. Load and Seed Registrations
+    const savedRegs = localStorage.getItem('pulsegym_registrations');
+    let loadedRegs: GymRegistration[] = [];
+    if (savedRegs) {
       try {
-        setAllRegistrations(JSON.parse(saved));
+        loadedRegs = JSON.parse(savedRegs);
       } catch (e) {
         console.error('Failed to load registrations', e);
       }
     }
+    
+    if (loadedRegs.length === 0) {
+      const getPastDateString = (daysAgo: number) => {
+        const d = new Date();
+        d.setDate(today.getDate() - daysAgo);
+        return d.toISOString().split('T')[0];
+      };
+      
+      loadedRegs = [
+        {
+          id: 'PLS-BRN-264901',
+          name: 'Amiruddin Siregar',
+          email: 'amir.siregar@gmail.com',
+          phone: '+628123456781',
+          gender: 'Male',
+          dob: '1992-04-12',
+          packageId: 'bronze_30d',
+          sourceInfo: 'Instagram Ads',
+          registrationDate: getPastDateString(22),
+          expirationDate: getPastDateString(-8), // 30 days total
+          status: 'Active'
+        },
+        {
+          id: 'PLS-SLV-268294',
+          name: 'Budi Santoso',
+          email: 'budi.santoso@yahoo.com',
+          phone: '+628123456782',
+          gender: 'Male',
+          dob: '1988-08-25',
+          packageId: 'silver_90d',
+          sourceInfo: 'Friend Referral',
+          referralName: 'Michael',
+          registrationDate: getPastDateString(18),
+          expirationDate: getPastDateString(-72), // 90 days total
+          status: 'Active'
+        },
+        {
+          id: 'PLS-GLD-261058',
+          name: 'Sarah Wijaya',
+          email: 'sarah.wijaya@gmail.com',
+          phone: '+628123456783',
+          gender: 'Female',
+          dob: '1995-11-03',
+          packageId: 'gold_180d',
+          sourceInfo: 'Google Maps / Search',
+          registrationDate: getPastDateString(12),
+          expirationDate: getPastDateString(-168), // 180 days total
+          status: 'Active'
+        },
+        {
+          id: 'PLS-PLT-269103',
+          name: 'Michael Chen',
+          email: 'michael.chen@hotmail.com',
+          phone: '+628123456784',
+          gender: 'Male',
+          dob: '1990-01-15',
+          packageId: 'platinum_360d',
+          sourceInfo: 'Walking Passerby',
+          registrationDate: getPastDateString(5),
+          expirationDate: getPastDateString(-355), // 360 days total
+          status: 'Active'
+        },
+        {
+          id: 'PLS-GLD-265502',
+          name: 'Jessica Amanda',
+          email: 'jessica.amanda@outlook.com',
+          phone: '+628123456785',
+          gender: 'Female',
+          dob: '1997-06-20',
+          packageId: 'gold_180d',
+          sourceInfo: 'Instagram Ads',
+          registrationDate: getPastDateString(2),
+          expirationDate: getPastDateString(-178),
+          status: 'Active'
+        }
+      ];
+      localStorage.setItem('pulsegym_registrations', JSON.stringify(loadedRegs));
+    }
+    setAllRegistrations(loadedRegs);
+
+    // 3. Load and Seed Expenses
+    const savedExpenses = localStorage.getItem('pulsegym_expenses');
+    let loadedExpenses: Expense[] = [];
+    if (savedExpenses) {
+      try {
+        loadedExpenses = JSON.parse(savedExpenses);
+      } catch (e) {
+        console.error('Failed to load expenses', e);
+      }
+    }
+    
+    if (loadedExpenses.length === 0) {
+      const getPastDateString = (daysAgo: number) => {
+        const d = new Date();
+        d.setDate(today.getDate() - daysAgo);
+        return d.toISOString().split('T')[0];
+      };
+
+      loadedExpenses = [
+        {
+          id: 'exp_1',
+          title: 'PLN Electricity Bill (Ruko AC)',
+          amount: 1200000,
+          category: 'Utilities',
+          date: getPastDateString(20)
+        },
+        {
+          id: 'exp_2',
+          title: 'Daikin AC Routine Maintenance',
+          amount: 450000,
+          category: 'Maintenance',
+          date: getPastDateString(15)
+        },
+        {
+          id: 'exp_3',
+          title: 'Part-Time Coach Wages',
+          amount: 2500000,
+          category: 'Salaries',
+          date: getPastDateString(10)
+        },
+        {
+          id: 'exp_4',
+          title: 'Meta Ads Gym Promotion',
+          amount: 600000,
+          category: 'Marketing',
+          date: getPastDateString(4)
+        }
+      ];
+      localStorage.setItem('pulsegym_expenses', JSON.stringify(loadedExpenses));
+    }
+    setExpenses(loadedExpenses);
   }, []);
 
   const saveRegistrations = (newList: GymRegistration[]) => {
     setAllRegistrations(newList);
     localStorage.setItem('pulsegym_registrations', JSON.stringify(newList));
+  };
+
+  const saveExpenses = (newList: Expense[]) => {
+    setExpenses(newList);
+    localStorage.setItem('pulsegym_expenses', JSON.stringify(newList));
+  };
+
+  const handleAddExpense = (newExp: Omit<Expense, 'id'>) => {
+    const expenseWithId: Expense = {
+      ...newExp,
+      id: 'exp_' + Date.now()
+    };
+    const updated = [expenseWithId, ...expenses];
+    saveExpenses(updated);
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    const updated = expenses.filter(e => e.id !== id);
+    saveExpenses(updated);
   };
 
   // --- CAMERA HELPERS FOR SELFIE ---
@@ -380,6 +550,7 @@ export default function App() {
     setCameraError(null);
     setDirection(-1);
     setCurrentStep('personal_info');
+    setCurrentView('portal');
   };
 
   // --- EXPORT TO CSV ---
@@ -482,23 +653,157 @@ export default function App() {
             <h1 className="text-lg font-extrabold tracking-tight text-black font-display">
               PULSE <span className="text-[#007AFF]">POWERHUB</span>
             </h1>
-            <p className="text-[9px] text-[#8E8E93] font-bold uppercase tracking-widest leading-none mt-0.5">Self-Service Kiosk</p>
+            <p className="text-[9px] text-[#8E8E93] font-bold uppercase tracking-widest leading-none mt-0.5">
+              {currentView === 'portal' ? 'Gateway Portal' : currentView === 'dashboard' ? 'Admin Controller' : 'Self-Service Kiosk'}
+            </p>
           </div>
         </div>
 
+        {/* Header Actions */}
+        <div className="flex items-center space-x-2">
+          {currentView === 'member' && (
+            <button
+              onClick={() => {
+                if (confirm("Are you sure you want to return to the Main Menu? Current form progress will be reset.")) {
+                  handleResetForm();
+                }
+              }}
+              className="flex items-center space-x-1.5 text-slate-600 hover:text-red-500 font-extrabold text-xs bg-[#F2F2F7] px-3.5 py-2 rounded-xl hover:bg-red-50 active:scale-95 transition cursor-pointer border border-[#E5E5EA]"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Exit Kiosk</span>
+            </button>
+          )}
+
+          {currentView === 'dashboard' && (
+            <button
+              onClick={() => setCurrentView('portal')}
+              className="flex items-center space-x-1.5 text-slate-600 hover:text-black font-extrabold text-xs bg-[#F2F2F7] px-3.5 py-2 rounded-xl hover:bg-[#E5E5EA] active:scale-95 transition cursor-pointer border border-[#E5E5EA]"
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-500" />
+              <span>Exit Dashboard</span>
+            </button>
+          )}
+        </div>
       </header>
 
       {/* MAIN CONTAINER */}
       <main className="w-full max-w-5xl mx-auto flex-grow flex flex-col justify-center">
         
-        {showStaffPanel ? (
-          /* --- STAFF PANEL / RIWAYAT PENDAFTARAN --- */
-          <motion.div 
-            id="staff-panel-container"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-xl overflow-hidden p-6 md:p-8"
-          >
+        {currentView === 'portal' && (
+          <div className="w-full max-w-4xl mx-auto py-4 md:py-8 space-y-8" id="view-portal">
+            <div className="text-center space-y-2">
+              <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest bg-[#007AFF]/10 px-3 py-1 rounded-full">
+                Pulse Gym System Terminals
+              </span>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-black tracking-tight font-display mt-2">
+                Choose Access Channel
+              </h2>
+              <p className="text-sm text-[#8E8E93] max-w-md mx-auto font-medium">
+                Tap a terminal option below to start your registration or manage active system operations.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto pt-4">
+              {/* CARD 1: MEMBER KIOSK */}
+              <button
+                type="button"
+                id="btn-goto-member"
+                onClick={() => {
+                  setDirection(1);
+                  setCurrentView('member');
+                }}
+                className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-lg p-6 md:p-8 flex flex-col justify-between text-left transition hover:shadow-xl hover:border-[#007AFF]/40 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer duration-300"
+              >
+                <div>
+                  <div className="w-14 h-14 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
+                    <Users className="w-7 h-7 stroke-[2.5px]" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                    <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest">Self-Service Active</span>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-black mt-2 tracking-tight">
+                    Member Registration
+                  </h3>
+                  <p className="text-xs text-[#8E8E93] mt-2 font-medium leading-relaxed">
+                    Pick your customized membership, register contact credentials, complete terminal payments, capture a quick ID photo, and generate your personal Pulse digital card instantly.
+                  </p>
+                </div>
+                <div className="mt-8 flex items-center justify-between w-full">
+                  <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-wider group-hover:translate-x-1.5 transition duration-300 flex items-center">
+                    Start Registration <ChevronRight className="w-4 h-4 ml-0.5" />
+                  </span>
+                  <div className="text-[10px] text-slate-400 font-mono bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                    TERMINAL-01
+                  </div>
+                </div>
+              </button>
+
+              {/* CARD 2: LOGIN DASHBOARD */}
+              <button
+                type="button"
+                id="btn-goto-dashboard"
+                onClick={() => {
+                  setLoginError('');
+                  setPasscode('');
+                  setShowLoginModal(true);
+                }}
+                className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-lg p-6 md:p-8 flex flex-col justify-between text-left transition hover:shadow-xl hover:border-slate-800/40 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer duration-300"
+              >
+                <div>
+                  <div className="w-14 h-14 bg-slate-100 text-slate-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
+                    <LayoutDashboard className="w-7 h-7 text-slate-600" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 bg-indigo-500 rounded-full" />
+                    <span className="text-[10px] font-extrabold text-indigo-600 uppercase tracking-widest">Secure Admin Portal</span>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-black mt-2 tracking-tight">
+                    Login Dashboard
+                  </h3>
+                  <p className="text-xs text-[#8E8E93] mt-2 font-medium leading-relaxed">
+                    Access administrative counters, track customer registrations, monitor active plan metrics, review user-submitted photos, delete outdated records, and export excel/CSV spreadsheets.
+                  </p>
+                </div>
+                <div className="mt-8 flex items-center justify-between w-full">
+                  <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider group-hover:translate-x-1.5 transition duration-300 flex items-center">
+                    Enter Dashboard <ChevronRight className="w-4 h-4 ml-0.5" />
+                  </span>
+                  <div className="text-[10px] text-slate-400 font-mono bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                    SECURE-GATE
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Quick stats footer for the portal */}
+            <div className="max-w-md mx-auto pt-6 text-center">
+              <p className="text-[11px] text-[#8E8E93] font-semibold tracking-wide">
+                Active Local Database: <span className="text-black font-extrabold font-mono">{allRegistrations.length} registrations</span> saved
+              </p>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'dashboard' && (
+          <div className="space-y-6 w-full" id="view-dashboard">
+            {/* DYNAMIC STATISTICS AND CHARTS MODULE */}
+            <AdminStatsAndCharts
+              registrations={allRegistrations}
+              expenses={expenses}
+              onAddExpense={handleAddExpense}
+              onDeleteExpense={handleDeleteExpense}
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+            />
+
+            <motion.div 
+              id="staff-panel-container"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-xl overflow-hidden p-6 md:p-8"
+            >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
                 <h2 className="text-2xl font-extrabold text-black tracking-tight">Member Registration History</h2>
@@ -671,14 +976,17 @@ export default function App() {
             <div className="mt-6 text-right">
               <button
                 id="staff-close-btn"
-                onClick={() => setShowStaffPanel(false)}
+                onClick={() => setCurrentView('portal')}
                 className="bg-[#007AFF] hover:bg-[#0062CC] text-white font-bold h-12 px-6 rounded-xl text-sm transition active:scale-95 cursor-pointer"
               >
-                Back to Registration Form
+                Exit to Portal Menu
               </button>
             </div>
           </motion.div>
-        ) : (
+          </div>
+        )}
+
+        {currentView === 'member' && (
           /* --- WIZARD FORM SYSTEM --- */
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
             
@@ -1472,6 +1780,148 @@ export default function App() {
         )}
 
       </main>
+
+      {/* iOS PASSCODE OVERLAY MODAL */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-[28px] border border-[#E5E5EA] shadow-xl w-full max-w-xs overflow-hidden p-6 text-center space-y-6"
+          >
+            {/* Header */}
+            <div className="space-y-1 relative">
+              <button
+                type="button"
+                onClick={() => setShowLoginModal(false)}
+                className="absolute -right-2 -top-2 p-1 text-[#8E8E93] hover:text-black rounded-full hover:bg-[#F2F2F7] transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-12 h-12 bg-[#007AFF]/10 text-[#007AFF] rounded-full flex items-center justify-center mx-auto mb-2">
+                <Lock className="w-5 h-5 stroke-[2.5px]" />
+              </div>
+              <h3 className="text-lg font-extrabold text-black tracking-tight">Enter Admin PIN</h3>
+              <p className="text-[10px] text-[#8E8E93] font-medium">Default Passcode is <span className="font-extrabold text-[#007AFF]">1234</span></p>
+            </div>
+
+            {/* iOS Dot Indicators */}
+            <div className="flex justify-center space-x-3.5 my-3">
+              {[0, 1, 2, 3].map((index) => (
+                <div
+                  key={index}
+                  className={`
+                    w-3.5 h-3.5 rounded-full transition-all duration-150 border border-[#E5E5EA]
+                    ${passcode.length > index ? 'bg-[#007AFF] scale-110 shadow-sm shadow-[#007AFF]/20' : 'bg-[#F2F2F7]'}
+                  `}
+                />
+              ))}
+            </div>
+
+            {/* Error indicator */}
+            {loginError && (
+              <p className="text-[11px] text-red-500 font-bold bg-red-50 py-1.5 rounded-lg border border-red-100">
+                {loginError}
+              </p>
+            )}
+
+            {/* PIN Buttons Keyboard */}
+            <div className="grid grid-cols-3 gap-3 max-w-[240px] mx-auto">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => {
+                    if (passcode.length < 4) {
+                      const newPass = passcode + num;
+                      setPasscode(newPass);
+                      setLoginError('');
+                      if (newPass === '1234') {
+                        setTimeout(() => {
+                          setCurrentView('dashboard');
+                          setShowLoginModal(false);
+                          setPasscode('');
+                        }, 150);
+                      } else if (newPass.length === 4) {
+                        setTimeout(() => {
+                          setLoginError('Incorrect PIN. Try again.');
+                          setPasscode('');
+                        }, 150);
+                      }
+                    }
+                  }}
+                  className="w-14 h-14 bg-[#F2F2F7] hover:bg-[#E5E5EA] active:bg-[#C6C6C8] rounded-full text-lg font-bold text-black flex flex-col items-center justify-center transition cursor-pointer mx-auto shadow-sm"
+                >
+                  <span>{num}</span>
+                </button>
+              ))}
+              
+              {/* Cancel */}
+              <button
+                type="button"
+                onClick={() => setShowLoginModal(false)}
+                className="w-14 h-14 text-slate-500 hover:text-red-500 text-[11px] font-bold flex items-center justify-center cursor-pointer mx-auto"
+              >
+                Cancel
+              </button>
+
+              {/* 0 Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (passcode.length < 4) {
+                    const newPass = passcode + '0';
+                    setPasscode(newPass);
+                    setLoginError('');
+                    if (newPass === '1234') {
+                      setTimeout(() => {
+                        setCurrentView('dashboard');
+                        setShowLoginModal(false);
+                        setPasscode('');
+                      }, 150);
+                    } else if (newPass.length === 4) {
+                      setTimeout(() => {
+                        setLoginError('Incorrect PIN. Try again.');
+                        setPasscode('');
+                      }, 150);
+                    }
+                  }
+                }}
+                className="w-14 h-14 bg-[#F2F2F7] hover:bg-[#E5E5EA] active:bg-[#C6C6C8] rounded-full text-lg font-bold text-black flex items-center justify-center transition cursor-pointer mx-auto shadow-sm"
+              >
+                0
+              </button>
+
+              {/* Delete Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setPasscode(passcode.slice(0, -1));
+                  setLoginError('');
+                }}
+                className="w-14 h-14 text-[#007AFF] hover:text-[#0062CC] text-xs font-bold flex items-center justify-center cursor-pointer mx-auto"
+              >
+                Delete
+              </button>
+            </div>
+
+            {/* Bypass link */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  setShowLoginModal(false);
+                  setPasscode('');
+                }}
+                className="text-[10px] text-slate-400 hover:text-[#007AFF] underline font-bold transition cursor-pointer"
+              >
+                Quick Bypass (Developer Demo)
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* FOOTER SECTION */}
       <footer className="w-full max-w-5xl mx-auto mt-6 text-center text-[11px] text-slate-400 font-medium px-4">

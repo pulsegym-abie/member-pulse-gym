@@ -7,7 +7,7 @@ export const MEMBERSHIP_PACKAGES: MembershipPackage[] = [
     durationDays: 1,
     durationDisplay: 'Day',
     price: 275000,
-    priceDisplay: 'IDR 275K++',
+    priceDisplay: 'Rp 275.000',
     discountNote: 'Single day full access',
     features: [
       'Access Gym',
@@ -27,7 +27,7 @@ export const MEMBERSHIP_PACKAGES: MembershipPackage[] = [
     durationDays: 3,
     durationDisplay: '3 Days',
     price: 700000,
-    priceDisplay: 'IDR 700K++',
+    priceDisplay: 'Rp 700.000',
     discountNote: 'Flexible multi-day access',
     features: [
       'Access Gym',
@@ -47,7 +47,7 @@ export const MEMBERSHIP_PACKAGES: MembershipPackage[] = [
     durationDays: 7,
     durationDisplay: 'Week',
     price: 1200000,
-    priceDisplay: 'IDR 1,200K++',
+    priceDisplay: 'Rp 1.200.000',
     discountNote: 'Save with weekly pass',
     features: [
       'Access Gym',
@@ -68,7 +68,7 @@ export const MEMBERSHIP_PACKAGES: MembershipPackage[] = [
     durationDays: 14,
     durationDisplay: '2 Weeks',
     price: 1800000,
-    priceDisplay: 'IDR 1,800K++',
+    priceDisplay: 'Rp 1.800.000',
     discountNote: 'Extended stay package',
     features: [
       'Access Gym',
@@ -89,7 +89,7 @@ export const MEMBERSHIP_PACKAGES: MembershipPackage[] = [
     durationDays: 28,
     durationDisplay: '4 Weeks',
     price: 2500000,
-    priceDisplay: 'IDR 2,500K++',
+    priceDisplay: 'Rp 2.500.000',
     discountNote: 'Best value full month',
     features: [
       'Access Gym',

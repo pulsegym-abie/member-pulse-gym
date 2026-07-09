@@ -47,3 +47,17 @@ export interface RegistrationStep {
   title: string;
   subtitle: string;
 }
+
+export interface Expense {
+  id: string;
+  title: string;
+  amount: number;
+  category: string;
+  date: string; // YYYY-MM-DD
+}
+
+export interface DateRange {
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+}
+
