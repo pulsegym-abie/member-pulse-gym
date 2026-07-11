@@ -1250,7 +1250,8 @@ export default function App() {
                               label="Full Name *"
                               placeholder="Enter your full name"
                               value={formData.name}
-                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                              onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                              style={{ textTransform: 'uppercase' }}
                               icon={<User className="w-5 h-5 text-slate-400" />}
                               error={errors.name}
                             />
