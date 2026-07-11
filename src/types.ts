@@ -34,6 +34,8 @@ export interface GymRegistration {
   packageId: string;
   sourceInfo: string;
   referralName?: string;
+  emergencyName?: string;
+  emergencyPhone?: string;
   photoBase64?: string;
   registrationDate: string;
   expirationDate: string;

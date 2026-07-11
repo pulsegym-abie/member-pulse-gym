@@ -207,7 +207,7 @@ export default function AdminStatsAndCharts({
       // Format for recharts
       Object.entries(dailyMap).sort((a, b) => a[0].localeCompare(b[0])).forEach(([key, val]) => {
         const dObj = new Date(key);
-        const display = dObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        const display = dObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
         data.push({
           dateStr: key,
           displayDate: display,
@@ -349,9 +349,9 @@ export default function AdminStatsAndCharts({
         <div className="bg-white rounded-[22px] border border-[#E5E5EA] p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[110px]">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[9px] text-[#8E8E93] font-extrabold uppercase tracking-widest">Inflow (Pemasukan)</p>
+              <p className="text-[9px] text-[#8E8E93] font-extrabold uppercase tracking-widest">Inflow (Revenue)</p>
               <p className="text-xl font-black text-emerald-600 leading-none mt-2 font-display">
-                Rp {stats.income.toLocaleString('id-ID')}
+                Rp {stats.income.toLocaleString('en-US')}
               </p>
             </div>
             <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -365,9 +365,9 @@ export default function AdminStatsAndCharts({
         <div className="bg-white rounded-[22px] border border-[#E5E5EA] p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[110px]">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[9px] text-[#8E8E93] font-extrabold uppercase tracking-widest">Outflow (Pengeluaran)</p>
+              <p className="text-[9px] text-[#8E8E93] font-extrabold uppercase tracking-widest">Outflow (Expenses)</p>
               <p className="text-xl font-black text-rose-600 leading-none mt-2 font-display">
-                Rp {stats.expenses.toLocaleString('id-ID')}
+                Rp {stats.expenses.toLocaleString('en-US')}
               </p>
             </div>
             <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
@@ -381,9 +381,9 @@ export default function AdminStatsAndCharts({
         <div className="bg-white rounded-[22px] border border-[#E5E5EA] p-5 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[110px]">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[9px] text-[#8E8E93] font-extrabold uppercase tracking-widest">Net Revenue (Netto)</p>
+              <p className="text-[9px] text-[#8E8E93] font-extrabold uppercase tracking-widest">Net Revenue (Net)</p>
               <p className={`text-xl font-black leading-none mt-2 font-display ${stats.profit >= 0 ? 'text-[#007AFF]' : 'text-rose-600'}`}>
-                Rp {stats.profit.toLocaleString('id-ID')}
+                Rp {stats.profit.toLocaleString('en-US')}
               </p>
             </div>
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${stats.profit >= 0 ? 'bg-[#007AFF]/10 text-[#007AFF]' : 'bg-rose-50 text-rose-600'}`}>
@@ -410,11 +410,11 @@ export default function AdminStatsAndCharts({
           <div className="flex items-center space-x-4 text-[10px] font-extrabold uppercase tracking-wider text-[#8E8E93]">
             <div className="flex items-center space-x-1.5">
               <span className="w-3 h-1.5 bg-emerald-500 rounded-full" />
-              <span>Pemasukan</span>
+              <span>Inflow</span>
             </div>
             <div className="flex items-center space-x-1.5">
               <span className="w-3 h-1.5 bg-rose-500 rounded-full" />
-              <span>Pengeluaran</span>
+              <span>Outflow</span>
             </div>
             <div className="flex items-center space-x-1.5">
               <span className="w-3 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
@@ -469,10 +469,10 @@ export default function AdminStatsAndCharts({
                           <p className="text-[10px] font-black uppercase text-[#8E8E93] tracking-widest">{data.displayDate}</p>
                           <div className="space-y-0.5">
                             <p className="text-xs font-bold text-emerald-400">
-                              Inflow: Rp {Number(data.pemasukan).toLocaleString('id-ID')}
+                              Inflow: Rp {Number(data.pemasukan).toLocaleString('en-US')}
                             </p>
                             <p className="text-xs font-bold text-rose-400">
-                              Outflow: Rp {Number(data.pengeluaran).toLocaleString('id-ID')}
+                              Outflow: Rp {Number(data.pengeluaran).toLocaleString('en-US')}
                             </p>
                             <p className="text-[10px] text-indigo-300 font-extrabold uppercase tracking-wide mt-1.5 flex items-center">
                               <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-1.5 inline-block" />
@@ -514,7 +514,7 @@ export default function AdminStatsAndCharts({
         <div className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-sm p-5 md:p-6 lg:col-span-8 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-extrabold text-black tracking-tight">Period Outflows (Pengeluaran)</h3>
+              <h3 className="text-base font-extrabold text-black tracking-tight">Period Outflows</h3>
               <p className="text-[11px] text-[#8E8E93] font-medium">Breakdown of operational expenditures logged in this range.</p>
             </div>
             
@@ -565,10 +565,10 @@ export default function AdminStatsAndCharts({
                         </span>
                       </td>
                       <td className="py-3 text-[11px] font-mono font-bold text-slate-500">
-                        {new Date(exp.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {new Date(exp.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="py-3 text-right pr-1 text-xs font-bold text-rose-600 font-display">
-                        Rp {exp.amount.toLocaleString('id-ID')}
+                        Rp {exp.amount.toLocaleString('en-US')}
                       </td>
                       <td className="py-3 text-center">
                         <button

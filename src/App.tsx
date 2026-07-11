@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, Mail, Phone, Calendar, ArrowLeft, ArrowRight, Check, 
   CheckCircle2, Dumbbell, Users, Search, Trash2, Download, 
-  Sparkles, ChevronRight, Info, RefreshCw, X, CreditCard, Loader2,
+  Sparkles, ChevronRight, ChevronLeft, Info, RefreshCw, X, CreditCard, Loader2,
   Camera, CameraOff, Upload, LayoutDashboard, Lock, Unlock, LogOut, DollarSign, Activity, TrendingUp
 } from 'lucide-react';
 import { GymRegistration, StepId, GenderType, Expense, DateRange } from './types';
@@ -17,6 +17,8 @@ import { CupertinoInput } from './components/CupertinoInput';
 import { CupertinoSegmentedControl } from './components/CupertinoSegmentedControl';
 import { CupertinoSwitch } from './components/CupertinoSwitch';
 import { MembershipCardView } from './components/MembershipCardView';
+import { RegulationsModal } from './components/RegulationsModal';
+import { CupertinoDatePicker } from './components/CupertinoDatePicker';
 import AdminStatsAndCharts from './components/AdminStatsAndCharts';
 
 // Common country codes for expats
@@ -68,15 +70,36 @@ const generateMemberID = (packageId: string) => {
   return `${prefix}-${packageId.substring(0, 3).toUpperCase()}-${year}${randomNum}`;
 };
 
+// Auto-format Indonesian & global phone numbers in a sleek iOS format
+const formatPhoneNumber = (value: string) => {
+  let digits = value.replace(/\D/g, '');
+  
+  // If user starts with '0', remove the leading '0' (since country code is selected separately)
+  if (digits.startsWith('0')) {
+    digits = digits.substring(1);
+  }
+  
+  if (digits.length <= 3) {
+    return digits;
+  } else if (digits.length <= 7) {
+    return `${digits.slice(0, 3)} - ${digits.slice(3)}`;
+  } else {
+    return `${digits.slice(0, 3)} - ${digits.slice(3, 7)} - ${digits.slice(7, 12)}`;
+  }
+};
+
 export default function App() {
   // --- STATE ---
   const [currentView, setCurrentView] = useState<'portal' | 'member' | 'dashboard'>('portal');
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [passcode, setPasscode] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
-  const [currentStep, setCurrentStep] = useState<StepId>('personal_info');
+  const [currentStep, setCurrentStep] = useState<StepId>('membership_package');
   const [direction, setDirection] = useState<number>(1); // 1 = forward, -1 = backward
   const [agreedTerms, setAgreedTerms] = useState<boolean>(false);
+  const [showRegulationsModal, setShowRegulationsModal] = useState<boolean>(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState<boolean>(false);
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
   const [allRegistrations, setAllRegistrations] = useState<GymRegistration[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -86,7 +109,8 @@ export default function App() {
   const [paymentState, setPaymentState] = useState<'idle' | 'waiting' | 'processing' | 'success'>('idle');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterPackage, setFilterPackage] = useState<string>('all');
-  const [countryCode, setCountryCode] = useState<string>('+62');
+  const [historyPage, setHistoryPage] = useState<number>(1);
+  const [countryCode, setCountryCode] = useState<string>('');
 
   // Form Fields
   const [formData, setFormData] = useState({
@@ -95,6 +119,8 @@ export default function App() {
     dob: '',
     email: '',
     phone: '',
+    emergencyName: '',
+    emergencyPhone: '',
     packageId: MEMBERSHIP_PACKAGES[1].id, // Silver as default
     sourceInfo: '',
     referralName: '',
@@ -102,6 +128,16 @@ export default function App() {
 
   // Validation Errors
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Synchronize country code with phone input presence
+  useEffect(() => {
+    const hasPhoneInput = formData.phone.trim().length > 0;
+    if (hasPhoneInput && !countryCode) {
+      setCountryCode('+62'); // Default to Indonesia when they start typing
+    } else if (!hasPhoneInput && countryCode) {
+      setCountryCode(''); // Reset to empty if they clear the input
+    }
+  }, [formData.phone]);
 
   // Created Member for success step
   const [latestMember, setLatestMember] = useState<GymRegistration | null>(null);
@@ -409,9 +445,7 @@ export default function App() {
           newErrors.dob = 'Minimum age is 10 years old';
         }
       }
-    }
 
-    if (step === 'contact_info') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!formData.email.trim()) {
         newErrors.email = 'Email is required';
@@ -419,12 +453,28 @@ export default function App() {
         newErrors.email = 'Invalid email format';
       }
 
+      const phoneDigits = formData.phone.replace(/\D/g, '');
       if (!formData.phone.trim()) {
         newErrors.phone = 'Phone number is required';
-      } else if (formData.phone.trim().length < 6 || formData.phone.trim().length > 15) {
-        newErrors.phone = 'Phone number must be 6-15 digits';
+      } else if (phoneDigits.length < 6 || phoneDigits.length > 15) {
+        newErrors.phone = `Phone number must be 6-15 digits (current: ${phoneDigits.length} digits)`;
       } else if (!/^[0-9\- ]+$/.test(formData.phone)) {
         newErrors.phone = 'Only numbers, spaces, and hyphens are allowed';
+      }
+
+      if (!formData.emergencyName.trim()) {
+        newErrors.emergencyName = 'Emergency contact name is required';
+      } else if (formData.emergencyName.trim().length < 3) {
+        newErrors.emergencyName = 'Contact name must be at least 3 characters';
+      }
+
+      const emergencyPhoneDigits = formData.emergencyPhone.replace(/\D/g, '');
+      if (!formData.emergencyPhone.trim()) {
+        newErrors.emergencyPhone = 'Emergency contact phone is required';
+      } else if (emergencyPhoneDigits.length < 6 || emergencyPhoneDigits.length > 15) {
+        newErrors.emergencyPhone = `Emergency phone must be 6-15 digits (current: ${emergencyPhoneDigits.length} digits)`;
+      } else if (!/^[0-9\- ]+$/.test(formData.emergencyPhone)) {
+        newErrors.emergencyPhone = 'Only numbers, spaces, and hyphens are allowed';
       }
     }
 
@@ -447,11 +497,9 @@ export default function App() {
     if (!validateStep(currentStep)) return;
 
     setDirection(1);
-    if (currentStep === 'personal_info') {
-      setCurrentStep('contact_info');
-    } else if (currentStep === 'contact_info') {
-      setCurrentStep('membership_package');
-    } else if (currentStep === 'membership_package') {
+    if (currentStep === 'membership_package') {
+      setCurrentStep('personal_info');
+    } else if (currentStep === 'personal_info') {
       setCurrentStep('payment');
       setPaymentState('waiting');
     } else if (currentStep === 'payment') {
@@ -466,12 +514,10 @@ export default function App() {
   const handleBack = () => {
     setDirection(-1);
     setErrors({});
-    if (currentStep === 'contact_info') {
-      setCurrentStep('personal_info');
-    } else if (currentStep === 'membership_package') {
-      setCurrentStep('contact_info');
-    } else if (currentStep === 'payment') {
+    if (currentStep === 'personal_info') {
       setCurrentStep('membership_package');
+    } else if (currentStep === 'payment') {
+      setCurrentStep('personal_info');
       setPaymentState('idle');
     } else if (currentStep === 'referral_source') {
       setCurrentStep('payment');
@@ -485,7 +531,12 @@ export default function App() {
   // --- SUBMIT REGISTRATION ---
   const handleSubmit = () => {
     if (!agreedTerms) {
-      setErrors({ terms: 'You must agree to the Terms & Conditions' });
+      setErrors({ terms: 'You must read and agree to the Terms & Conditions by scrolling down and signing' });
+      return;
+    }
+
+    if (!signatureImage) {
+      setErrors({ terms: 'Please sign electronically to confirm your agreement' });
       return;
     }
 
@@ -514,6 +565,8 @@ export default function App() {
       packageId: formData.packageId,
       sourceInfo: formData.sourceInfo,
       referralName: formData.sourceInfo === 'referral' ? formData.referralName : undefined,
+      emergencyName: formData.emergencyName.trim() || undefined,
+      emergencyPhone: formData.emergencyPhone.trim() || undefined,
       photoBase64: photoToSave || undefined,
       registrationDate: regDateObj.toISOString().split('T')[0],
       expirationDate: expDateObj.toISOString().split('T')[0],
@@ -536,12 +589,17 @@ export default function App() {
       dob: '',
       email: '',
       phone: '',
+      emergencyName: '',
+      emergencyPhone: '',
       packageId: MEMBERSHIP_PACKAGES[1].id,
       sourceInfo: '',
       referralName: '',
     });
     setCountryCode('+62');
     setAgreedTerms(false);
+    setSignatureImage(null);
+    setHasScrolledToBottom(false);
+    setShowRegulationsModal(false);
     setPaymentState('idle');
     setErrors({});
     setLatestMember(null);
@@ -549,7 +607,7 @@ export default function App() {
     setCapturedImage(null);
     setCameraError(null);
     setDirection(-1);
-    setCurrentStep('personal_info');
+    setCurrentStep('membership_package');
     setCurrentView('portal');
   };
 
@@ -561,7 +619,7 @@ export default function App() {
     }
 
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Member ID,Full Name,Gender,Date of Birth,Email,Phone,Package,Source,Referral,Registration Date,Expiration Date\n";
+    csvContent += "Member ID,Full Name,Gender,Date of Birth,Email,Phone,Emergency Name,Emergency Phone,Package,Source,Referral,Registration Date,Expiration Date\n";
 
     allRegistrations.forEach((r) => {
       const row = [
@@ -571,6 +629,8 @@ export default function App() {
         r.dob,
         r.email,
         r.phone,
+        `"${(r.emergencyName || '').replace(/"/g, '""')}"`,
+        `"${(r.emergencyPhone || '').replace(/"/g, '""')}"`,
         r.packageId.toUpperCase(),
         r.sourceInfo,
         `"${(r.referralName || '').replace(/"/g, '""')}"`,
@@ -610,15 +670,22 @@ export default function App() {
     return matchesSearch && matchesPackage;
   });
 
+  const ITEMS_PER_PAGE = 20;
+  const totalPages = Math.ceil(filteredRegistrations.length / ITEMS_PER_PAGE) || 1;
+  const currentPage = Math.min(Math.max(1, historyPage), totalPages);
+  const paginatedRegistrations = filteredRegistrations.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   // Steps definition for UI indicator
   const stepsList = [
-    { id: 'personal_info', label: 'Personal Info', subtitle: 'Name & Age' },
-    { id: 'contact_info', label: 'Contact', subtitle: 'Email & Phone' },
     { id: 'membership_package', label: 'Plan', subtitle: 'Select Membership' },
+    { id: 'personal_info', label: 'Personal Info', subtitle: 'Contact & Details' },
     { id: 'payment', label: 'Payment', subtitle: 'EDC Terminal' },
     { id: 'referral_source', label: 'Discovery', subtitle: 'How You Found Us' },
-    { id: 'summary', label: 'Confirm', subtitle: 'Final Review' },
-    { id: 'selfie', label: 'ID Photo', subtitle: 'Take a Selfie' }
+    { id: 'summary', label: 'Confirm', subtitle: 'T&C & Signature' },
+    { id: 'selfie', label: 'ID Photo', subtitle: 'Selfie (Mandatory)' }
   ];
 
   // Map Step to Index
@@ -843,7 +910,10 @@ export default function App() {
                   type="text"
                   placeholder="Search by Name, Email, Phone, or Member ID..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setHistoryPage(1);
+                  }}
                   className="w-full h-12 pl-11 pr-4 bg-[#F2F2F7] border border-[#E5E5EA] rounded-xl text-sm font-semibold text-black focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:bg-white transition"
                 />
               </div>
@@ -852,7 +922,10 @@ export default function App() {
                 <select
                   id="staff-package-filter"
                   value={filterPackage}
-                  onChange={(e) => setFilterPackage(e.target.value)}
+                  onChange={(e) => {
+                    setFilterPackage(e.target.value);
+                    setHistoryPage(1);
+                  }}
                   className="flex-1 h-12 px-4 bg-[#F2F2F7] border border-[#E5E5EA] rounded-xl text-sm font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:bg-white transition"
                 >
                   <option value="all">All Plans</option>
@@ -866,6 +939,7 @@ export default function App() {
                     onClick={() => {
                       setSearchQuery('');
                       setFilterPackage('all');
+                      setHistoryPage(1);
                     }}
                     className="px-4 text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 border border-red-100 rounded-xl transition cursor-pointer"
                   >
@@ -880,65 +954,73 @@ export default function App() {
               <table className="w-full text-left border-collapse" id="staff-members-table">
                 <thead>
                   <tr className="bg-[#F2F2F7] text-xs font-bold text-[#8E8E93] uppercase tracking-wider border-b border-[#E5E5EA]">
-                    <th className="p-4">Member ID / Info</th>
-                    <th className="p-4">Contact</th>
-                    <th className="p-4">Plan</th>
-                    <th className="p-4">Join Date / Expires</th>
-                    <th className="p-4">Discovery / Referral</th>
-                    <th className="p-4 text-center">Action</th>
+                    <th className="py-2.5 px-3">Member ID / Info</th>
+                    <th className="py-2.5 px-3">Contact</th>
+                    <th className="py-2.5 px-3">Plan</th>
+                    <th className="py-2.5 px-3">Join Date / Expires</th>
+                    <th className="py-2.5 px-3">Discovery / Referral</th>
+                    <th className="py-2.5 px-3 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E5E5EA] text-sm font-semibold text-[#3A3A3C]">
+                <tbody className="divide-y divide-[#E5E5EA] text-xs font-semibold text-[#3A3A3C]">
                   {filteredRegistrations.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-[#8E8E93]">
-                        <Users className="w-12 h-12 mx-auto opacity-30 mb-2" />
+                        <Users className="w-10 h-10 mx-auto opacity-30 mb-2" />
                         <p className="font-bold">No registration data found.</p>
                         <p className="text-xs font-medium">Try changing your search terms or register a new member.</p>
                       </td>
                     </tr>
                   ) : (
-                    filteredRegistrations.map((m) => {
+                    paginatedRegistrations.map((m) => {
                       const mPkg = MEMBERSHIP_PACKAGES.find(p => p.id === m.packageId);
                       return (
                         <tr key={m.id} className="hover:bg-[#F2F2F7]/50 transition">
-                          <td className="p-4">
-                            <div className="flex items-center space-x-3">
+                          <td className="py-1.5 px-3">
+                            <div className="flex items-center space-x-2">
                               {m.photoBase64 ? (
-                                <img src={m.photoBase64} alt={m.name} className="w-11 h-11 rounded-full object-cover border border-[#E5E5EA] shadow-sm flex-shrink-0" />
+                                <img src={m.photoBase64} alt={m.name} className="w-9 h-9 rounded-full object-cover border border-[#E5E5EA] shadow-sm flex-shrink-0" />
                               ) : (
-                                <div className="w-11 h-11 rounded-full bg-[#F2F2F7] border border-[#E5E5EA] flex items-center justify-center text-[#8E8E93] flex-shrink-0">
-                                  <User className="w-5 h-5" />
+                                <div className="w-9 h-9 rounded-full bg-[#F2F2F7] border border-[#E5E5EA] flex items-center justify-center text-[#8E8E93] flex-shrink-0">
+                                  <User className="w-4 h-4" />
                                 </div>
                               )}
-                              <div>
-                                <span className="font-mono text-[10px] bg-[#F2F2F7] text-black font-bold px-1.5 py-0.5 rounded border border-[#E5E5EA]">
+                              <div className="min-w-0">
+                                <span className="font-mono text-[9px] bg-[#F2F2F7] text-black font-bold px-1 py-0.5 rounded border border-[#E5E5EA]">
                                   {m.id}
                                 </span>
-                                <div className="font-extrabold text-black mt-0.5 uppercase text-sm">{m.name}</div>
-                                <span className="text-[10px] bg-[#007AFF]/10 text-[#007AFF] px-1.5 py-0.5 rounded font-extrabold">
+                                <div className="font-extrabold text-black mt-0.5 uppercase text-xs truncate max-w-[130px] leading-tight" title={m.name}>{m.name}</div>
+                                <span className="text-[9px] bg-[#007AFF]/10 text-[#007AFF] px-1 py-0.2 rounded font-extrabold whitespace-nowrap">
                                   {m.gender} • DOB: {m.dob}
                                 </span>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 text-xs font-medium">
-                            <div className="flex items-center space-x-1.5 text-black">
-                              <Mail className="w-3.5 h-3.5 text-[#8E8E93]" />
-                              <span>{m.email}</span>
+                          <td className="py-1.5 px-3 text-[11px] font-medium">
+                            <div className="flex items-center space-x-1 text-black">
+                              <Mail className="w-3 h-3 text-[#8E8E93] flex-shrink-0" />
+                              <span className="truncate max-w-[120px]" title={m.email}>{m.email}</span>
                             </div>
-                            <div className="flex items-center space-x-1.5 mt-1 text-[#8E8E93]">
-                              <Phone className="w-3.5 h-3.5 text-[#8E8E93]" />
+                            <div className="flex items-center space-x-1 mt-0.5 text-[#8E8E93]">
+                              <Phone className="w-3 h-3 text-[#8E8E93] flex-shrink-0" />
                               <span>{m.phone}</span>
                             </div>
+                            {m.emergencyName && (
+                              <div className="mt-1 text-[9px] font-bold text-[#FF9500] bg-[#FF9500]/8 px-1 py-0.5 rounded border border-[#FF9500]/15 flex items-center space-x-0.5 max-w-[150px]">
+                                <span className="font-extrabold text-[#FF9500]">SOS:</span>
+                                <span className="truncate text-slate-700" title={`${m.emergencyName} - ${m.emergencyPhone}`}>
+                                  {m.emergencyName} ({m.emergencyPhone})
+                                </span>
+                              </div>
+                            )}
                           </td>
-                          <td className="p-4">
-                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${mPkg?.colorTheme.badge}`}>
+                          <td className="py-1.5 px-3">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${mPkg?.colorTheme.badge || 'bg-slate-100 text-slate-800'}`}>
                               {mPkg?.name || m.packageId.toUpperCase()}
                             </span>
-                            <div className="text-xs text-[#8E8E93] mt-1 font-medium">{mPkg?.priceDisplay}</div>
+                            <div className="text-[10px] text-[#8E8E93] mt-0.5 font-medium">{mPkg?.priceDisplay}</div>
                           </td>
-                          <td className="p-4 text-xs font-semibold">
+                          <td className="py-1.5 px-3 text-[11px] font-semibold">
                             <div className="text-black">
                               <span className="font-bold text-[#8E8E93]">Join:</span> {m.registrationDate}
                             </div>
@@ -946,23 +1028,23 @@ export default function App() {
                               <span className="text-[#8E8E93] font-normal">Exp:</span> {m.expirationDate}
                             </div>
                           </td>
-                          <td className="p-4">
-                            <div className="capitalize font-bold text-black text-xs">
+                          <td className="py-1.5 px-3">
+                            <div className="capitalize font-bold text-black text-[11px] truncate max-w-[120px]">
                               {SOURCE_INFO_OPTIONS.find(o => o.id === m.sourceInfo)?.label || m.sourceInfo}
                             </div>
                             {m.referralName && (
-                              <div className="text-[11px] font-bold bg-[#007AFF]/10 text-[#007AFF] px-2 py-0.5 rounded border border-[#007AFF]/15 mt-1 inline-block">
+                              <div className="text-[9px] font-bold bg-[#007AFF]/10 text-[#007AFF] px-1 py-0.2 rounded border border-[#007AFF]/15 mt-0.5 inline-block truncate max-w-[110px]" title={m.referralName}>
                                 Ref: {m.referralName}
                               </div>
                             )}
                           </td>
-                          <td className="p-4 text-center">
+                          <td className="py-1.5 px-3 text-center">
                             <button
                               onClick={() => handleDeleteEntry(m.id)}
-                              className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"
+                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition cursor-pointer"
                               title="Delete Member"
                             >
-                              <Trash2 className="w-4.5 h-4.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </td>
                         </tr>
@@ -973,11 +1055,77 @@ export default function App() {
               </table>
             </div>
 
-            <div className="mt-6 text-right">
+            {/* PAGINATION NUMBER CONTROLLER */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-3 bg-[#F2F2F7]/50 border border-[#E5E5EA] p-3 rounded-2xl">
+                <div className="text-xs font-semibold text-[#8E8E93]">
+                  Showing <span className="text-black font-extrabold">{Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredRegistrations.length)}</span> to{' '}
+                  <span className="text-black font-extrabold">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRegistrations.length)}</span> of{' '}
+                  <span className="text-black font-extrabold">{filteredRegistrations.length}</span> members
+                </div>
+                
+                <div className="flex items-center space-x-1">
+                  {/* Prev Button */}
+                  <button
+                    onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-lg border border-[#E5E5EA] bg-white text-black disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#F2F2F7] transition cursor-pointer flex items-center justify-center"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {/* Page Numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                    const isNearCurrent = Math.abs(pageNum - currentPage) <= 1;
+                    const isFirstOrLast = pageNum === 1 || pageNum === totalPages;
+                    
+                    if (totalPages <= 7 || isNearCurrent || isFirstOrLast) {
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setHistoryPage(pageNum)}
+                          className={`w-7.5 h-7.5 rounded-lg text-xs font-extrabold transition cursor-pointer flex items-center justify-center ${
+                            currentPage === pageNum
+                              ? 'bg-[#007AFF] text-white shadow-sm ring-2 ring-[#007AFF]/20'
+                              : 'border border-[#E5E5EA] bg-white text-[#3A3A3C] hover:bg-[#F2F2F7]'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    }
+                    
+                    // Ellipsis placeholders
+                    if (pageNum === 2 || pageNum === totalPages - 1) {
+                      return (
+                        <span key={pageNum} className="px-1 text-xs font-bold text-[#8E8E93] select-none">
+                          ...
+                        </span>
+                      );
+                    }
+                    
+                    return null;
+                  })}
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => setHistoryPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 rounded-lg border border-[#E5E5EA] bg-white text-black disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#F2F2F7] transition cursor-pointer flex items-center justify-center"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 text-right">
               <button
                 id="staff-close-btn"
                 onClick={() => setCurrentView('portal')}
-                className="bg-[#007AFF] hover:bg-[#0062CC] text-white font-bold h-12 px-6 rounded-xl text-sm transition active:scale-95 cursor-pointer"
+                className="bg-[#007AFF] hover:bg-[#0062CC] text-white font-bold h-11 px-6 rounded-xl text-sm transition active:scale-95 cursor-pointer"
               >
                 Exit to Portal Menu
               </button>
@@ -1084,19 +1232,19 @@ export default function App() {
                       transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                       className="w-full h-full flex flex-col justify-between"
                     >
-                      {/* STEP 1: PERSONAL INFO */}
+                      {/* STEP: PERSONAL & CONTACT INFO (CONSOLIDATED) */}
                       {currentStep === 'personal_info' && (
-                        <div className="space-y-6" id="step-personal-info">
+                        <div className="space-y-4" id="step-personal-info">
                           <div>
                             <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest">Basic Information</span>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight mt-1">Personal Details</h2>
-                            <p className="text-sm text-[#8E8E93] mt-1 font-medium">Please enter your full name and other basic information.</p>
+                            <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight mt-1">Personal & Contact Details</h2>
+                            <p className="text-sm text-[#8E8E93] mt-1 font-medium">Please enter your profile details and contact credentials to complete your registration.</p>
                           </div>
 
-                          <div className="space-y-5">
+                          <div className="space-y-4">
                             <CupertinoInput
                               id="input-name"
-                              label="Full Name"
+                              label="Full Name *"
                               placeholder="Enter your full name"
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1104,10 +1252,10 @@ export default function App() {
                               error={errors.name}
                             />
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <CupertinoSegmentedControl
                                 id="control-gender"
-                                label="Gender"
+                                label="Gender *"
                                 options={[
                                   { value: 'Male', label: 'Male' },
                                   { value: 'Female', label: 'Female' }
@@ -1116,91 +1264,106 @@ export default function App() {
                                 onChange={(val) => setFormData({ ...formData, gender: val as GenderType })}
                               />
 
-                              <CupertinoInput
+                              <CupertinoDatePicker
                                 id="input-dob"
-                                label="Date of Birth"
-                                type="date"
-                                placeholder="Select date of birth"
+                                label="Date of Birth *"
                                 value={formData.dob}
-                                onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                                icon={<Calendar className="w-5 h-5 text-slate-400" />}
+                                onChange={(val) => setFormData({ ...formData, dob: val })}
                                 error={errors.dob}
                               />
                             </div>
                             {errors.gender && (
-                              <p className="text-xs font-medium text-red-500 px-1 mt-1">{errors.gender}</p>
+                              <p className="text-xs font-medium text-red-500 px-1 mt-0.5">{errors.gender}</p>
                             )}
-                          </div>
-                        </div>
-                      )}
 
-                      {/* STEP 2: CONTACT INFO */}
-                      {currentStep === 'contact_info' && (
-                        <div className="space-y-6" id="step-contact-info">
-                          <div>
-                            <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest">Contact Information</span>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight mt-1">Contact Details</h2>
-                            <p className="text-sm text-[#8E8E93] mt-1 font-medium">We use this to send your digital membership card & registration details.</p>
-                          </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <CupertinoInput
+                                id="input-email"
+                                label="Email Address *"
+                                type="email"
+                                placeholder="e.g., member@email.com"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                icon={<Mail className="w-5 h-5 text-slate-400" />}
+                                error={errors.email}
+                              />
 
-                          <div className="space-y-5">
-                            <CupertinoInput
-                              id="input-email"
-                              label="Email Address"
-                              type="email"
-                              placeholder="e.g., member@email.com"
-                              value={formData.email}
-                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                              icon={<Mail className="w-5 h-5 text-slate-400" />}
-                              error={errors.email}
-                            />
-
-                            <div className="flex flex-col space-y-1.5 w-full">
-                              <label htmlFor="input-phone" className="text-[13px] font-bold text-[#3A3A3C] tracking-wide ml-1">
-                                Phone / WhatsApp Number
-                              </label>
-                              <div className="flex space-x-2">
-                                {/* Country Code Select Dropdown */}
-                                <div className="relative flex-shrink-0 w-32">
-                                  <select
-                                    id="input-country-code"
-                                    value={countryCode}
-                                    onChange={(e) => setCountryCode(e.target.value)}
-                                    className="w-full h-14 bg-[#F2F2F7] border border-[#E5E5EA] rounded-xl px-3 text-base font-semibold text-black focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:bg-white transition-all duration-200 cursor-pointer appearance-none pr-8"
-                                  >
-                                    {COUNTRY_CODES.map((c) => (
-                                      <option key={c.code} value={c.code}>
-                                        {c.country} {c.code}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold text-[10px]">
-                                    ▼
+                              <div className="flex flex-col space-y-1.5 w-full">
+                                <label htmlFor="input-phone" className="text-[13px] font-bold text-[#3A3A3C] tracking-wide ml-1">
+                                  Phone / WhatsApp Number *
+                                </label>
+                                <div className="flex space-x-2">
+                                  {/* Country Code Select Dropdown */}
+                                  <div className="relative flex-shrink-0 w-24">
+                                    <select
+                                      id="input-country-code"
+                                      value={countryCode}
+                                      onChange={(e) => setCountryCode(e.target.value)}
+                                      className="w-full h-14 bg-[#F2F2F7] border border-[#E5E5EA] rounded-xl px-2 text-sm font-semibold text-black focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:bg-white transition-all duration-200 cursor-pointer appearance-none pr-6"
+                                    >
+                                      <option value="" disabled className="text-slate-400">--</option>
+                                      {COUNTRY_CODES.map((c) => (
+                                        <option key={c.code} value={c.code}>
+                                          {c.country} {c.code}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold text-[9px]">
+                                      ▼
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Phone Input field */}
+                                  <div className="flex-grow">
+                                    <CupertinoInput
+                                      id="input-phone"
+                                      type="tel"
+                                      placeholder="e.g., 812 3456 7890"
+                                      value={formData.phone}
+                                      onChange={(e) => setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })}
+                                      icon={<Phone className="w-5 h-5 text-slate-400" />}
+                                      className="!space-y-0"
+                                    />
                                   </div>
                                 </div>
-                                
-                                {/* Phone Input field */}
-                                <div className="flex-grow">
-                                  <CupertinoInput
-                                    id="input-phone"
-                                    type="tel"
-                                    placeholder="e.g., 81234567890"
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    icon={<Phone className="w-5 h-5 text-slate-400" />}
-                                    className="!space-y-0"
-                                  />
-                                </div>
+                                {errors.phone ? (
+                                  <span className="text-xs font-medium text-red-500 px-1">
+                                    {errors.phone}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 px-1">
+                                    Please provide an active WhatsApp number.
+                                  </span>
+                                )}
                               </div>
-                              {errors.phone ? (
-                                <span className="text-xs font-medium text-red-500 px-1">
-                                  {errors.phone}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400 px-1">
-                                  Please provide an active number for verification.
-                                </span>
-                              )}
+                            </div>
+
+                            {/* EMERGENCY CONTACT SECTION */}
+                            <div className="pt-2 border-t border-[#E5E5EA]">
+                              <span className="text-xs font-extrabold text-[#FF9500] uppercase tracking-widest block">Emergency Contact</span>
+                              <p className="text-[11px] text-[#8E8E93] font-medium mt-0.5">Please provide contact details in case of medical emergency.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <CupertinoInput
+                                id="input-emergency-name"
+                                label="Emergency Contact Name *"
+                                placeholder="e.g., Jane Doe (Spouse/Parent)"
+                                value={formData.emergencyName}
+                                onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
+                                icon={<User className="w-5 h-5 text-slate-400" />}
+                                error={errors.emergencyName}
+                              />
+
+                              <CupertinoInput
+                                id="input-emergency-phone"
+                                label="Emergency Phone Number *"
+                                placeholder="e.g., 812 3456 7890"
+                                value={formData.emergencyPhone}
+                                onChange={(e) => setFormData({ ...formData, emergencyPhone: formatPhoneNumber(e.target.value) })}
+                                icon={<Phone className="w-5 h-5 text-slate-400" />}
+                                error={errors.emergencyPhone}
+                              />
                             </div>
                           </div>
                         </div>
@@ -1504,20 +1667,58 @@ export default function App() {
                               )}
                             </div>
 
-                            {/* Terms switch */}
-                            <CupertinoSwitch
-                              id="terms-switch"
-                              checked={agreedTerms}
-                              onChange={(val) => {
-                                  setAgreedTerms(val);
-                                  if (val) setErrors({ ...errors, terms: '' });
-                              }}
-                              label="I agree to the Terms & Conditions"
-                              description="I agree to the gym rules, equipment conduct, and cancellation policies."
-                            />
-                            {errors.terms && (
-                              <p className="text-xs font-medium text-red-500 px-1">{errors.terms}</p>
-                            )}
+                            {/* Terms agreement and signature preview */}
+                            <div className="space-y-3 pt-2">
+                              <div 
+                                className="p-4 rounded-2xl border border-[#E5E5EA] bg-[#F2F2F7]/50 flex items-start space-x-3 cursor-pointer select-none hover:bg-[#F2F2F7] transition duration-200"
+                                onClick={() => setShowRegulationsModal(true)}
+                              >
+                                <div className="flex-shrink-0 mt-0.5">
+                                  <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                                    agreedTerms && signatureImage 
+                                      ? 'bg-[#007AFF] border-[#007AFF] text-white' 
+                                      : 'border-[#C6C6C8] bg-white'
+                                  }`}>
+                                    {agreedTerms && signatureImage && <Check className="w-3.5 h-3.5 stroke-[3px]" />}
+                                  </div>
+                                </div>
+                                <div className="flex-grow text-left">
+                                  <label className="text-sm font-extrabold text-black block cursor-pointer">
+                                    I Agree to the Gym Regulations & Liability Waiver *
+                                  </label>
+                                  <p className="text-[11px] text-[#8E8E93] font-medium leading-normal mt-0.5">
+                                    {signatureImage 
+                                      ? 'Regulations have been accepted and signed electronically.' 
+                                      : 'Click here to read regulations and provide your electronic signature (Required).'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Signature preview if exists */}
+                              {signatureImage && (
+                                <div className="p-3 bg-[#E5E5EA]/30 rounded-2xl border border-[#E5E5EA] flex items-center justify-between text-left">
+                                  <div>
+                                    <span className="text-[9px] font-extrabold text-[#8E8E93] uppercase tracking-wider block">ELECTRONIC SIGNATURE</span>
+                                    <img src={signatureImage} alt="E-Signature" className="h-10 mt-1 object-contain bg-white rounded-lg border border-slate-200 px-2 py-0.5" />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSignatureImage(null);
+                                      setAgreedTerms(false);
+                                    }}
+                                    className="text-xs text-[#E25C5C] font-extrabold hover:underline cursor-pointer px-2 py-1 hover:bg-red-50 rounded-lg transition animate-fade-in"
+                                  >
+                                    Clear
+                                  </button>
+                                </div>
+                              )}
+
+                              {errors.terms && (
+                                <p className="text-xs font-medium text-red-500 px-1">{errors.terms}</p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1733,14 +1934,21 @@ export default function App() {
                         <button
                           id="btn-complete-selfie"
                           type="button"
-                          onClick={() => handleCompleteRegistration(selfiePhoto)}
+                          disabled={!selfiePhoto}
+                          onClick={() => {
+                            if (!selfiePhoto) {
+                              alert('A selfie/photo is required to continue!');
+                              return;
+                            }
+                            handleCompleteRegistration(selfiePhoto);
+                          }}
                           className={`h-11 px-6 font-extrabold rounded-xl text-sm shadow-md transition flex items-center space-x-1.5 cursor-pointer ${
                             selfiePhoto 
                               ? 'bg-[#007AFF] hover:bg-[#0062CC] text-white active:scale-95' 
-                              : 'bg-white border border-[#E5E5EA] text-slate-500 hover:border-[#C6C6C8] active:scale-95'
+                              : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                           }`}
                         >
-                          <span>{selfiePhoto ? 'Generate Card' : 'Skip & Generate Card'}</span>
+                          <span>Generate Card</span>
                           <Check className="w-4.5 h-4.5 stroke-[3px]" />
                         </button>
                       ) : currentStep === 'payment' ? (
@@ -1922,6 +2130,24 @@ export default function App() {
           </motion.div>
         </div>
       )}
+
+      {/* REGULATIONS & SIGNATURE MODAL */}
+      <RegulationsModal
+        isOpen={showRegulationsModal}
+        onClose={() => setShowRegulationsModal(false)}
+        onAgree={(sigBase64) => {
+          setSignatureImage(sigBase64);
+          setAgreedTerms(true);
+          setShowRegulationsModal(false);
+          // Clear validation errors for terms if exist
+          setErrors((prev) => {
+            const next = { ...prev };
+            delete next.terms;
+            return next;
+          });
+        }}
+        savedSignature={signatureImage}
+      />
 
       {/* FOOTER SECTION */}
       <footer className="w-full max-w-5xl mx-auto mt-6 text-center text-[11px] text-slate-400 font-medium px-4">
