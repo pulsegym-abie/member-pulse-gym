@@ -184,7 +184,7 @@ export const RegulationsModal: React.FC<RegulationsModalProps> = ({
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* HEADER */}
         <div className="bg-[#F2F2F7] px-5 py-4 border-b border-[#E5E5EA] flex justify-between items-center">
@@ -205,7 +205,7 @@ export const RegulationsModal: React.FC<RegulationsModalProps> = ({
         <div 
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="p-5 overflow-y-auto space-y-4 text-xs text-slate-700 leading-relaxed max-h-[300px] border-b border-[#E5E5EA]"
+          className="p-5 overflow-y-auto space-y-4 text-xs text-slate-700 leading-relaxed max-h-[450px] md:max-h-[500px] border-b border-[#E5E5EA]"
         >
           <div className="space-y-3 pr-1 text-left" id="waiver-content">
             <p className="font-extrabold text-slate-950 text-sm">PT PULSE POWERHUB INDONESIA - LIABILITY WAIVER</p>
@@ -285,7 +285,7 @@ export const RegulationsModal: React.FC<RegulationsModalProps> = ({
               <div className="bg-white border border-slate-300 rounded-2xl overflow-hidden shadow-inner relative flex justify-center items-center">
                 <canvas
                   ref={canvasRef}
-                  width={460}
+                  width={700}
                   height={130}
                   className="w-full h-[130px] bg-slate-50 cursor-crosshair touch-none"
                   onMouseDown={startDrawing}

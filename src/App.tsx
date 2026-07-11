@@ -1660,7 +1660,7 @@ export default function App() {
                               <div className="flex justify-between items-center py-2.5 px-3.5">
                                 <span className="text-[11px] font-bold text-[#8E8E93] uppercase">How You Found Us</span>
                                 <span className="text-xs md:text-sm font-bold text-black capitalize">
-                                  {SOURCE_INFO_OPTIONS.find(o => o.id === formData.sourceInfo)?.label.split(' / ')[0]}
+                                  {SOURCE_INFO_OPTIONS.find(o => o.id === formData.sourceInfo)?.label.split('/')[0]}
                                 </span>
                               </div>
                               {formData.sourceInfo === 'referral' && (

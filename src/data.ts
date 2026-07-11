@@ -107,10 +107,9 @@ export const MEMBERSHIP_PACKAGES: MembershipPackage[] = [
 ];
 
 export const SOURCE_INFO_OPTIONS = [
-  { id: 'instagram', label: 'Instagram / Social Media' },
-  { id: 'website', label: 'Google / Search Engine' },
-  { id: 'brosur', label: 'Flyer / Billboard / Local Area' },
-  { id: 'referral', label: 'Recommended by Friend / Member (Referral)' },
-  { id: 'event', label: 'Event / Mall Exhibition' },
-  { id: 'lainnya', label: 'Other Sources' }
+  { id: 'instagram', label: 'Instagram/Social Media' },
+  { id: 'google', label: 'Google/Search Engine' },
+  { id: 'nearby', label: 'Staying Nearby' },
+  { id: 'passed_by', label: 'Just Passed by' },
+  { id: 'referral', label: 'Recommended by Friend/Member (refererral)' }
 ];
