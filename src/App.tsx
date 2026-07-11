@@ -708,51 +708,54 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f2f2f7] py-3 px-3 md:py-5 md:px-6 flex flex-col justify-between font-sans">
+    <div className="min-h-screen bg-[#f2f2f7] py-3 px-3 md:py-5 md:px-6 flex flex-col justify-between font-sans relative">
       
-      {/* HEADER SECTION */}
-      <header className="w-full max-w-5xl mx-auto mb-4 bg-white/90 backdrop-blur-md border border-[#E5E5EA] rounded-[18px] px-5 py-3 flex justify-between items-center shadow-sm">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-9.5 h-9.5 rounded-lg bg-[#007AFF] flex items-center justify-center text-white shadow-md shadow-[#007AFF]/20">
-            <Dumbbell className="w-5 h-5 animate-pulse" />
-          </div>
-          <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-black font-display">
-              PULSE <span className="text-[#007AFF]">POWERHUB</span>
-            </h1>
-            <p className="text-[9px] text-[#8E8E93] font-bold uppercase tracking-widest leading-none mt-0.5">
-              {currentView === 'portal' ? 'Gateway Portal' : currentView === 'dashboard' ? 'Admin Controller' : 'Self-Service Kiosk'}
-            </p>
-          </div>
-        </div>
+      {/* FLOATING BACK BUTTON FOR MEMBERSHIP KIOSK (TOP-LEFT CORNER) */}
+      {currentView === 'member' && (
+        <button
+          onClick={() => {
+            if (confirm("Are you sure you want to return to the Main Menu? Current form progress will be reset.")) {
+              handleResetForm();
+            }
+          }}
+          className="fixed top-4 left-4 z-50 flex items-center justify-center w-11 h-11 bg-white hover:bg-red-50 border border-[#E5E5EA] hover:border-red-200 text-[#007AFF] hover:text-red-600 rounded-full shadow-lg transition-all active:scale-95 cursor-pointer group"
+          title="Exit Kiosk"
+        >
+          <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5 stroke-[2.5]" />
+        </button>
+      )}
 
-        {/* Header Actions */}
-        <div className="flex items-center space-x-2">
-          {currentView === 'member' && (
-            <button
-              onClick={() => {
-                if (confirm("Are you sure you want to return to the Main Menu? Current form progress will be reset.")) {
-                  handleResetForm();
-                }
-              }}
-              className="flex items-center space-x-1.5 text-slate-600 hover:text-red-500 font-extrabold text-xs bg-[#F2F2F7] px-3.5 py-2 rounded-xl hover:bg-red-50 active:scale-95 transition cursor-pointer border border-[#E5E5EA]"
-            >
-              <X className="w-3.5 h-3.5" />
-              <span>Exit Kiosk</span>
-            </button>
-          )}
+      {/* HEADER SECTION (HIDDEN ON MEMBER KIOSK) */}
+      {currentView !== 'member' && (
+        <header className="w-full max-w-5xl mx-auto mb-4 bg-white/90 backdrop-blur-md border border-[#E5E5EA] rounded-[18px] px-5 py-3 flex justify-between items-center shadow-sm">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-9.5 h-9.5 rounded-lg bg-[#007AFF] flex items-center justify-center text-white shadow-md shadow-[#007AFF]/20">
+              <Dumbbell className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <h1 className="text-lg font-extrabold tracking-tight text-black font-display">
+                PULSE <span className="text-[#007AFF]">POWERHUB</span>
+              </h1>
+              <p className="text-[9px] text-[#8E8E93] font-bold uppercase tracking-widest leading-none mt-0.5">
+                {currentView === 'portal' ? 'Gateway Portal' : currentView === 'dashboard' ? 'Admin Controller' : 'Self-Service Kiosk'}
+              </p>
+            </div>
+          </div>
 
-          {currentView === 'dashboard' && (
-            <button
-              onClick={() => setCurrentView('portal')}
-              className="flex items-center space-x-1.5 text-slate-600 hover:text-black font-extrabold text-xs bg-[#F2F2F7] px-3.5 py-2 rounded-xl hover:bg-[#E5E5EA] active:scale-95 transition cursor-pointer border border-[#E5E5EA]"
-            >
-              <LogOut className="w-3.5 h-3.5 text-red-500" />
-              <span>Exit Dashboard</span>
-            </button>
-          )}
-        </div>
-      </header>
+          {/* Header Actions */}
+          <div className="flex items-center space-x-2">
+            {currentView === 'dashboard' && (
+              <button
+                onClick={() => setCurrentView('portal')}
+                className="flex items-center space-x-1.5 text-slate-600 hover:text-black font-extrabold text-xs bg-[#F2F2F7] px-3.5 py-2 rounded-xl hover:bg-[#E5E5EA] active:scale-95 transition cursor-pointer border border-[#E5E5EA]"
+              >
+                <LogOut className="w-3.5 h-3.5 text-red-500" />
+                <span>Exit Dashboard</span>
+              </button>
+            )}
+          </div>
+        </header>
+      )}
 
       {/* MAIN CONTAINER */}
       <main className="w-full max-w-5xl mx-auto flex-grow flex flex-col justify-center">
