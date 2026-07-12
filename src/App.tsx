@@ -725,8 +725,8 @@ export default function App() {
         </button>
       )}
 
-      {/* HEADER SECTION (HIDDEN ON MEMBER KIOSK) */}
-      {currentView !== 'member' && (
+      {/* HEADER SECTION (ONLY SHOWN ON DASHBOARD) */}
+      {currentView === 'dashboard' && (
         <header className="w-full max-w-5xl mx-auto mb-4 bg-white/90 backdrop-blur-md border border-[#E5E5EA] rounded-[18px] px-5 py-3 flex justify-between items-center shadow-sm">
           <div className="flex items-center space-x-2.5">
             <div className="w-9.5 h-9.5 rounded-lg bg-[#007AFF] flex items-center justify-center text-white shadow-md shadow-[#007AFF]/20">
@@ -761,19 +761,7 @@ export default function App() {
       <main className="w-full max-w-5xl mx-auto flex-grow flex flex-col justify-center">
         
         {currentView === 'portal' && (
-          <div className="w-full max-w-4xl mx-auto py-4 md:py-8 space-y-8" id="view-portal">
-            <div className="text-center space-y-2">
-              <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest bg-[#007AFF]/10 px-3 py-1 rounded-full">
-                Pulse Gym System Terminals
-              </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-black tracking-tight font-display mt-2">
-                Choose Access Channel
-              </h2>
-              <p className="text-sm text-[#8E8E93] max-w-md mx-auto font-medium">
-                Tap a terminal option below to start your registration or manage active system operations.
-              </p>
-            </div>
-
+          <div className="w-full max-w-4xl mx-auto py-4 md:py-8 space-y-8 animate-fade-in" id="view-portal">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto pt-4">
               {/* CARD 1: MEMBER KIOSK */}
               <button
