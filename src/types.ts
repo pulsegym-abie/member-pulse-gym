@@ -40,6 +40,8 @@ export interface GymRegistration {
   registrationDate: string;
   expirationDate: string;
   status: 'Active' | 'Pending';
+  groupName?: string;
+  isGroupPrimary?: boolean;
 }
 
 export type StepId = 'personal_info' | 'contact_info' | 'membership_package' | 'payment' | 'referral_source' | 'summary' | 'selfie' | 'success';

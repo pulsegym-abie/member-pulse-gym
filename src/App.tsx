@@ -88,9 +88,21 @@ const formatPhoneNumber = (value: string) => {
   }
 };
 
+// Formatter for Rupiah currency
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(amount).replace('IDR', 'Rp');
+};
+
 export default function App() {
   // --- STATE ---
-  const [currentView, setCurrentView] = useState<'portal' | 'member' | 'dashboard'>('portal');
+  const [currentView, setCurrentView] = useState<'portal' | 'member' | 'dashboard'>('member');
+  const [registrationType, setRegistrationType] = useState<'individual' | 'group'>('individual');
+  const [groupSize, setGroupSize] = useState<number>(2);
+  const [groupMembers, setGroupMembers] = useState<string[]>(['']);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [passcode, setPasscode] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
@@ -138,6 +150,19 @@ export default function App() {
       setCountryCode(''); // Reset to empty if they clear the input
     }
   }, [formData.phone]);
+
+  // Synchronize group members count based on group size (excluding the main person)
+  useEffect(() => {
+    setGroupMembers((prev) => {
+      const neededLength = Math.max(1, groupSize - 1);
+      if (prev.length === neededLength) return prev;
+      if (prev.length < neededLength) {
+        return [...prev, ...Array(neededLength - prev.length).fill('')];
+      } else {
+        return prev.slice(0, neededLength);
+      }
+    });
+  }, [groupSize]);
 
   // Created Member for success step
   const [latestMember, setLatestMember] = useState<GymRegistration | null>(null);
@@ -476,6 +501,16 @@ export default function App() {
       } else if (!/^[0-9\- ]+$/.test(formData.emergencyPhone)) {
         newErrors.emergencyPhone = 'Only numbers, spaces, and hyphens are allowed';
       }
+
+      if (registrationType === 'group') {
+        groupMembers.forEach((member, idx) => {
+          if (!member.trim()) {
+            newErrors[`groupMember_${idx}`] = `Member #${idx + 2}'s full name is required`;
+          } else if (member.trim().length < 3) {
+            newErrors[`groupMember_${idx}`] = `Member #${idx + 2}'s name must be at least 3 characters`;
+          }
+        });
+      }
     }
 
     if (step === 'referral_source') {
@@ -553,10 +588,10 @@ export default function App() {
     const expDateObj = new Date();
     expDateObj.setDate(expDateObj.getDate() + pkg.durationDays);
 
-    const memberId = generateMemberID(formData.packageId);
+    const primaryMemberId = generateMemberID(formData.packageId);
 
-    const newRegistration: GymRegistration = {
-      id: memberId,
+    const primaryRegistration: GymRegistration = {
+      id: primaryMemberId,
       name: formData.name,
       email: formData.email,
       phone: `${countryCode} ${formData.phone.trim()}`,
@@ -570,12 +605,39 @@ export default function App() {
       photoBase64: photoToSave || undefined,
       registrationDate: regDateObj.toISOString().split('T')[0],
       expirationDate: expDateObj.toISOString().split('T')[0],
-      status: 'Active'
+      status: 'Active',
+      groupName: registrationType === 'group' ? `${formData.name}'s Group` : undefined,
+      isGroupPrimary: registrationType === 'group' ? true : undefined,
     };
 
-    const updatedList = [newRegistration, ...allRegistrations];
+    const newRegistrations: GymRegistration[] = [primaryRegistration];
+
+    if (registrationType === 'group') {
+      groupMembers.forEach((member, i) => {
+        if (member.trim()) {
+          const secondaryMemberId = generateMemberID(formData.packageId);
+          newRegistrations.push({
+            id: secondaryMemberId,
+            name: member.trim().toUpperCase(),
+            email: `${formData.email.split('@')[0]}+member${i+2}@${formData.email.split('@')[1] || 'gmail.com'}`,
+            phone: `${countryCode} ${formData.phone.trim()}`,
+            gender: '',
+            dob: formData.dob,
+            packageId: formData.packageId,
+            sourceInfo: formData.sourceInfo,
+            registrationDate: regDateObj.toISOString().split('T')[0],
+            expirationDate: expDateObj.toISOString().split('T')[0],
+            status: 'Active',
+            groupName: `${formData.name}'s Group`,
+            isGroupPrimary: false,
+          });
+        }
+      });
+    }
+
+    const updatedList = [...newRegistrations, ...allRegistrations];
     saveRegistrations(updatedList);
-    setLatestMember(newRegistration);
+    setLatestMember(primaryRegistration);
     
     setDirection(1);
     setCurrentStep('success');
@@ -606,9 +668,12 @@ export default function App() {
     setSelfiePhoto(null);
     setCapturedImage(null);
     setCameraError(null);
+    setRegistrationType('individual');
+    setGroupSize(2);
+    setGroupMembers(['']);
     setDirection(-1);
     setCurrentStep('membership_package');
-    setCurrentView('portal');
+    setCurrentView('member');
   };
 
   // --- EXPORT TO CSV ---
@@ -981,9 +1046,20 @@ export default function App() {
                                   {m.id}
                                 </span>
                                 <div className="font-extrabold text-black mt-0.5 uppercase text-xs truncate max-w-[130px] leading-tight" title={m.name}>{m.name}</div>
-                                <span className="text-[9px] bg-[#007AFF]/10 text-[#007AFF] px-1 py-0.2 rounded font-extrabold whitespace-nowrap">
-                                  {m.gender} • DOB: {m.dob}
-                                </span>
+                                <div className="flex flex-wrap items-center gap-1 mt-1">
+                                  <span className="text-[9px] bg-[#007AFF]/10 text-[#007AFF] px-1 py-0.2 rounded font-extrabold whitespace-nowrap">
+                                    {m.gender || 'Group Member'} • DOB: {m.dob}
+                                  </span>
+                                  {m.groupName && (
+                                    <span className={`text-[8px] px-1 py-0.2 rounded font-extrabold whitespace-nowrap border ${
+                                      m.isGroupPrimary 
+                                        ? 'bg-amber-50 text-amber-900 border-amber-200' 
+                                        : 'bg-slate-100 text-slate-800 border-slate-200'
+                                    }`} title={m.groupName}>
+                                      👥 {m.isGroupPrimary ? 'Leader' : 'Group'}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -1229,14 +1305,18 @@ export default function App() {
                           <div>
                             <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest">Basic Information</span>
                             <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight mt-1">Personal & Contact Details</h2>
-                            <p className="text-sm text-[#8E8E93] mt-1 font-medium">Please enter your profile details and contact credentials to complete your registration.</p>
+                            <p className="text-sm text-[#8E8E93] mt-1 font-medium">
+                              {registrationType === 'group' 
+                                ? "Enter contact details for the group leader, followed by other group members below." 
+                                : "Please enter your profile details and contact credentials to complete your registration."}
+                            </p>
                           </div>
 
                           <div className="space-y-4">
                             <CupertinoInput
                               id="input-name"
-                              label="Full Name *"
-                              placeholder="Enter your full name"
+                              label={registrationType === 'group' ? "Primary Member Full Name (Group Leader) *" : "Full Name *"}
+                              placeholder={registrationType === 'group' ? "Enter group leader's full name" : "Enter your full name"}
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
                               style={{ textTransform: 'uppercase' }}
@@ -1357,11 +1437,48 @@ export default function App() {
                                 error={errors.emergencyPhone}
                               />
                             </div>
+
+                            {/* DYNAMIC ADDITIONAL GROUP MEMBERS */}
+                            {registrationType === 'group' && (
+                              <div className="pt-4 border-t border-[#E5E5EA] space-y-4">
+                                <div>
+                                  <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-widest block">Group Members Details</span>
+                                  <p className="text-[11px] text-[#8E8E93] font-medium mt-0.5">Please provide the full names of the other group members.</p>
+                                </div>
+                                <div className="space-y-3.5">
+                                  {groupMembers.map((member, i) => (
+                                    <div key={i} className="p-3.5 bg-[#F2F2F7]/50 rounded-2xl border border-[#E5E5EA] space-y-2">
+                                      <div className="text-xs font-extrabold text-[#3A3A3C]">Member #{i + 2} Details</div>
+                                      <CupertinoInput
+                                        id={`input-group-member-${i}`}
+                                        label={`Member #${i + 2} Full Name *`}
+                                        placeholder={`Enter Member #${i + 2}'s full name`}
+                                        value={member}
+                                        onChange={(e) => {
+                                          const nextMembers = [...groupMembers];
+                                          nextMembers[i] = e.target.value.toUpperCase();
+                                          setGroupMembers(nextMembers);
+                                          // Clear errors when typing
+                                          if (errors[`groupMember_${i}`]) {
+                                            const nextErrors = { ...errors };
+                                            delete nextErrors[`groupMember_${i}`];
+                                            setErrors(nextErrors);
+                                          }
+                                        }}
+                                        style={{ textTransform: 'uppercase' }}
+                                        icon={<User className="w-5 h-5 text-slate-400" />}
+                                        error={errors[`groupMember_${i}`]}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
-                      {/* STEP 3: MEMBERSHIP PACKAGE */}
+                       {/* STEP 3: MEMBERSHIP PACKAGE */}
                       {currentStep === 'membership_package' && (
                         <div className="space-y-4" id="step-membership-package">
                           <div>
@@ -1369,6 +1486,72 @@ export default function App() {
                             <h2 className="text-xl md:text-2xl font-extrabold text-black tracking-tight mt-0.5">Select Membership</h2>
                             <p className="text-xs text-[#8E8E93] mt-0.5 font-medium">Find the plan that best fits your fitness goals.</p>
                           </div>
+
+                          {/* Individual vs Group Registration Selection */}
+                          <div className="bg-[#F2F2F7] p-1.5 rounded-2xl border border-[#E5E5EA]">
+                            <div className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2 ml-2 mt-1">Registration Type</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setRegistrationType('individual')}
+                                className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer ${
+                                  registrationType === 'individual'
+                                    ? 'bg-white text-black border border-[#E5E5EA] shadow-sm font-extrabold'
+                                    : 'text-slate-500 hover:text-black hover:bg-white/50'
+                                }`}
+                              >
+                                <User className={`w-4 h-4 ${registrationType === 'individual' ? 'text-[#007AFF]' : 'text-slate-400'}`} />
+                                <span>Individual (1 Person)</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setRegistrationType('group')}
+                                className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer ${
+                                  registrationType === 'group'
+                                    ? 'bg-white text-black border border-[#E5E5EA] shadow-sm font-extrabold'
+                                    : 'text-slate-500 hover:text-black hover:bg-white/50'
+                                }`}
+                              >
+                                <Users className={`w-4 h-4 ${registrationType === 'group' ? 'text-[#007AFF]' : 'text-slate-400'}`} />
+                                <span>Group (2+ People)</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Dynamic Group Size selector if Group chosen */}
+                          {registrationType === 'group' && (
+                            <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">Group Size Selection</h4>
+                                  <p className="text-[11px] text-amber-800 font-semibold mt-0.5">Choose the number of registrations in your group (max 5).</p>
+                                </div>
+                                <div className="flex items-center bg-white border border-amber-200 rounded-xl p-1 shadow-sm">
+                                  <button
+                                    type="button"
+                                    onClick={() => setGroupSize(prev => Math.max(2, prev - 1))}
+                                    disabled={groupSize <= 2}
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-amber-900 hover:bg-amber-100 font-bold disabled:opacity-30 cursor-pointer"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="w-8 text-center text-sm font-black text-amber-950">{groupSize}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setGroupSize(prev => Math.min(5, prev + 1))}
+                                    disabled={groupSize >= 5}
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-amber-900 hover:bg-amber-100 font-bold disabled:opacity-30 cursor-pointer"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="bg-white/80 border border-amber-100 px-3 py-2 rounded-xl text-[11px] font-bold text-emerald-700 flex items-center space-x-1.5 shadow-sm">
+                                <Sparkles className="w-3.5 h-3.5 flex-shrink-0 animate-pulse text-amber-600" />
+                                <span>Group Promo: Special 10% group discount applied to total price!</span>
+                              </div>
+                            </div>
+                          )}
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {MEMBERSHIP_PACKAGES.map((pkg) => {
@@ -1448,16 +1631,42 @@ export default function App() {
                           {(() => {
                             const selectedPkg = MEMBERSHIP_PACKAGES.find(p => p.id === formData.packageId);
                             if (!selectedPkg) return null;
+                            const standardTotal = selectedPkg.price * (registrationType === 'group' ? groupSize : 1);
+                            const discount = registrationType === 'group' ? Math.round(standardTotal * 0.10) : 0;
+                            const finalPrice = standardTotal - discount;
+                            
                             return (
                               <div className="bg-[#007AFF]/5 rounded-2xl p-4 border border-[#007AFF]/15 flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                  <span className="text-[10px] font-extrabold text-[#007AFF] uppercase tracking-wider">SELECTED PLAN</span>
+                                  <span className="text-[10px] font-extrabold text-[#007AFF] uppercase tracking-wider">
+                                    {registrationType === 'group' ? `SELECTED PLAN (GROUP OF ${groupSize})` : 'SELECTED PLAN'}
+                                  </span>
                                   <h4 className="text-base font-extrabold text-black">{selectedPkg.name}</h4>
-                                  <p className="text-xs text-slate-500 font-semibold">{selectedPkg.discountNote}</p>
+                                  <p className="text-xs text-slate-500 font-semibold">
+                                    {registrationType === 'group' 
+                                      ? `${selectedPkg.discountNote} • Includes ${groupSize} Members` 
+                                      : selectedPkg.discountNote}
+                                  </p>
                                 </div>
-                                <div className="text-right">
-                                  <span className="text-lg font-black text-black">{selectedPkg.priceDisplay}</span>
-                                  <p className="text-[10px] text-slate-400 font-bold">/ {selectedPkg.durationDisplay}</p>
+                                <div className="text-right flex flex-col items-end">
+                                  {registrationType === 'group' ? (
+                                    <>
+                                      <span className="text-xs font-bold text-slate-400 line-through">
+                                        {formatRupiah(standardTotal)}
+                                      </span>
+                                      <span className="text-lg font-black text-emerald-600">
+                                        {formatRupiah(finalPrice)}
+                                      </span>
+                                      <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 mt-1">
+                                        10% Group Promo
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-lg font-black text-black">{selectedPkg.priceDisplay}</span>
+                                      <p className="text-[10px] text-slate-400 font-bold">/ {selectedPkg.durationDisplay}</p>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -1618,9 +1827,31 @@ export default function App() {
                             {/* Cupertino Grouped List Style */}
                             <div className="bg-[#F2F2F7] rounded-2xl border border-[#E5E5EA] divide-y divide-[#E5E5EA] overflow-hidden">
                               <div className="flex justify-between items-center py-2.5 px-3.5">
-                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Full Name</span>
+                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">
+                                  {registrationType === 'group' ? 'Leader Name' : 'Full Name'}
+                                </span>
                                 <span className="text-xs md:text-sm font-extrabold text-black uppercase">{formData.name}</span>
                               </div>
+                              
+                              {registrationType === 'group' && (
+                                <>
+                                  <div className="flex justify-between items-start py-2.5 px-3.5">
+                                    <span className="text-[11px] font-bold text-[#8E8E93] uppercase mt-0.5">Other Members</span>
+                                    <div className="text-right max-w-[60%]">
+                                      {groupMembers.map((member, mIdx) => (
+                                        <div key={mIdx} className="text-xs font-bold text-black uppercase truncate">
+                                          {member || `MEMBER #${mIdx + 2}`}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between items-center py-2.5 px-3.5">
+                                    <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Total Group Size</span>
+                                    <span className="text-xs md:text-sm font-extrabold text-[#007AFF]">{groupSize} People</span>
+                                  </div>
+                                </>
+                              )}
+
                               <div className="flex justify-between items-center py-2.5 px-3.5">
                                 <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Gender / Date of Birth</span>
                                 <span className="text-xs md:text-sm font-bold text-black">{formData.gender} • {formData.dob}</span>
@@ -1639,12 +1870,42 @@ export default function App() {
                                   {MEMBERSHIP_PACKAGES.find(p => p.id === formData.packageId)?.name}
                                 </span>
                               </div>
-                              <div className="flex justify-between items-center py-2.5 px-3.5">
-                                <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Membership Cost</span>
-                                <span className="text-xs md:text-sm font-black text-black">
-                                  {MEMBERSHIP_PACKAGES.find(p => p.id === formData.packageId)?.priceDisplay}
-                                </span>
-                              </div>
+
+                              {(() => {
+                                const selectedPkg = MEMBERSHIP_PACKAGES.find(p => p.id === formData.packageId);
+                                if (!selectedPkg) return null;
+                                const standardTotal = selectedPkg.price * (registrationType === 'group' ? groupSize : 1);
+                                const discount = registrationType === 'group' ? Math.round(standardTotal * 0.10) : 0;
+                                const finalPrice = standardTotal - discount;
+
+                                return (
+                                  <>
+                                    {registrationType === 'group' && (
+                                      <div className="flex justify-between items-center py-2.5 px-3.5 bg-slate-100/50">
+                                        <span className="text-[11px] font-bold text-[#8E8E93] uppercase">Subtotal ({groupSize} People)</span>
+                                        <span className="text-xs md:text-sm font-bold text-slate-500 line-through">
+                                          {formatRupiah(standardTotal)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {registrationType === 'group' && (
+                                      <div className="flex justify-between items-center py-2.5 px-3.5 bg-emerald-50/50">
+                                        <span className="text-[11px] font-bold text-emerald-700 uppercase">10% Group Discount</span>
+                                        <span className="text-xs md:text-sm font-bold text-emerald-700">
+                                          - {formatRupiah(discount)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between items-center py-2.5 px-3.5 bg-[#007AFF]/5">
+                                      <span className="text-[11px] font-bold text-[#007AFF] uppercase">Total Cost</span>
+                                      <span className="text-xs md:text-sm font-black text-[#007AFF]">
+                                        {formatRupiah(finalPrice)}
+                                      </span>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+
                               <div className="flex justify-between items-center py-2.5 px-3.5">
                                 <span className="text-[11px] font-bold text-[#8E8E93] uppercase">How You Found Us</span>
                                 <span className="text-xs md:text-sm font-bold text-black capitalize">
