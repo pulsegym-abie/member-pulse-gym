@@ -99,7 +99,7 @@ const formatRupiah = (amount: number) => {
 
 export default function App() {
   // --- STATE ---
-  const [currentView, setCurrentView] = useState<'portal' | 'member' | 'dashboard'>('member');
+  const [currentView, setCurrentView] = useState<'portal' | 'member' | 'dashboard'>('portal');
   const [registrationType, setRegistrationType] = useState<'individual' | 'group'>('individual');
   const [groupSize, setGroupSize] = useState<number>(2);
   const [groupMembers, setGroupMembers] = useState<string[]>(['']);
@@ -673,7 +673,7 @@ export default function App() {
     setGroupMembers(['']);
     setDirection(-1);
     setCurrentStep('membership_package');
-    setCurrentView('member');
+    setCurrentView('portal');
   };
 
   // --- EXPORT TO CSV ---
@@ -826,85 +826,117 @@ export default function App() {
       <main className="w-full max-w-5xl mx-auto flex-grow flex flex-col justify-center">
         
         {currentView === 'portal' && (
-          <div className="w-full max-w-4xl mx-auto py-4 md:py-8 space-y-8 animate-fade-in" id="view-portal">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto pt-4">
-              {/* CARD 1: MEMBER KIOSK */}
+          <div className="w-full max-w-4xl mx-auto py-4 md:py-12 space-y-10 animate-fade-in" id="view-portal">
+            
+            {/* Title / Header of the Choice Screen */}
+            <div className="text-center space-y-3 max-w-xl mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-[#007AFF] flex items-center justify-center text-white shadow-lg shadow-[#007AFF]/25 mx-auto mb-2">
+                <Dumbbell className="w-6 h-6 animate-pulse" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-black text-black tracking-tight font-display">
+                PULSE <span className="text-[#007AFF]">POWERHUB</span>
+              </h2>
+              <p className="text-xs md:text-sm text-[#8E8E93] font-bold uppercase tracking-wider">
+                Select Registration Method
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+              {/* CARD 1: INDIVIDUAL REGISTRATION */}
               <button
                 type="button"
-                id="btn-goto-member"
+                id="btn-goto-individual"
                 onClick={() => {
+                  setRegistrationType('individual');
+                  setGroupSize(1);
+                  setGroupMembers(['']);
                   setDirection(1);
                   setCurrentView('member');
                 }}
-                className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-lg p-6 md:p-8 flex flex-col justify-between text-left transition hover:shadow-xl hover:border-[#007AFF]/40 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer duration-300"
+                className="bg-white rounded-[28px] border border-[#E5E5EA] shadow-lg p-6 md:p-8 flex flex-col justify-between text-left transition duration-300 hover:shadow-2xl hover:border-[#007AFF]/40 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer"
               >
                 <div>
-                  <div className="w-14 h-14 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
-                    <Users className="w-7 h-7 stroke-[2.5px]" />
+                  <div className="w-14 h-14 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[#007AFF]/15 transition duration-300">
+                    <User className="w-7 h-7 stroke-[2.5px]" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                    <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest">Self-Service Active</span>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="w-2 h-2 bg-[#007AFF] rounded-full" />
+                    <span className="text-[10px] font-extrabold text-[#007AFF] uppercase tracking-widest">Single Entry</span>
                   </div>
-                  <h3 className="text-xl font-extrabold text-black mt-2 tracking-tight">
-                    Member Registration
+                  <h3 className="text-xl md:text-2xl font-extrabold text-black mt-2.5 tracking-tight font-display">
+                    Individual Registration
                   </h3>
-                  <p className="text-xs text-[#8E8E93] mt-2 font-medium leading-relaxed">
-                    Pick your customized membership, register contact credentials, complete terminal payments, capture a quick ID photo, and generate your personal Pulse digital card instantly.
+                  <p className="text-xs md:text-sm text-[#8E8E93] mt-3 font-semibold leading-relaxed">
+                    Register for one person. Perfect for single members or individual trainees. Select your package, fill details, make payment, take a photo, and get your digital card.
                   </p>
                 </div>
-                <div className="mt-8 flex items-center justify-between w-full">
+                <div className="mt-10 flex items-center justify-between w-full pt-4 border-t border-slate-100">
                   <span className="text-xs font-extrabold text-[#007AFF] uppercase tracking-wider group-hover:translate-x-1.5 transition duration-300 flex items-center">
-                    Start Registration <ChevronRight className="w-4 h-4 ml-0.5" />
+                    Start Individual Form <ChevronRight className="w-4 h-4 ml-0.5" />
                   </span>
-                  <div className="text-[10px] text-slate-400 font-mono bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                    TERMINAL-01
+                  <div className="text-[10px] text-slate-400 font-mono bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
+                    1 PERSON
                   </div>
                 </div>
               </button>
 
-              {/* CARD 2: LOGIN DASHBOARD */}
+              {/* CARD 2: GROUP & PARTNERSHIP */}
               <button
                 type="button"
-                id="btn-goto-dashboard"
+                id="btn-goto-group"
                 onClick={() => {
-                  setLoginError('');
-                  setPasscode('');
-                  setShowLoginModal(true);
+                  setRegistrationType('group');
+                  setGroupSize(2);
+                  setGroupMembers(['']);
+                  setDirection(1);
+                  setCurrentView('member');
                 }}
-                className="bg-white rounded-[24px] border border-[#E5E5EA] shadow-lg p-6 md:p-8 flex flex-col justify-between text-left transition hover:shadow-xl hover:border-slate-800/40 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer duration-300"
+                className="bg-white rounded-[28px] border border-[#E5E5EA] shadow-lg p-6 md:p-8 flex flex-col justify-between text-left transition duration-300 hover:shadow-2xl hover:border-emerald-500/40 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer"
               >
                 <div>
-                  <div className="w-14 h-14 bg-slate-100 text-slate-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
-                    <LayoutDashboard className="w-7 h-7 text-slate-600" />
+                  <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-100 transition duration-300">
+                    <Users className="w-7 h-7 stroke-[2.5px]" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full" />
-                    <span className="text-[10px] font-extrabold text-indigo-600 uppercase tracking-widest">Secure Admin Portal</span>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest">Multi-Member • 10% Off</span>
                   </div>
-                  <h3 className="text-xl font-extrabold text-black mt-2 tracking-tight">
-                    Login Dashboard
+                  <h3 className="text-xl md:text-2xl font-extrabold text-black mt-2.5 tracking-tight font-display">
+                    Group & Partnership
                   </h3>
-                  <p className="text-xs text-[#8E8E93] mt-2 font-medium leading-relaxed">
-                    Access administrative counters, track customer registrations, monitor active plan metrics, review user-submitted photos, delete outdated records, and export excel/CSV spreadsheets.
+                  <p className="text-xs md:text-sm text-[#8E8E93] mt-3 font-semibold leading-relaxed">
+                    Register 2 to 5 members, families, partnerships, or corporate teams. Enjoy our special 10% group discount applied automatically to your selected tier.
                   </p>
                 </div>
-                <div className="mt-8 flex items-center justify-between w-full">
-                  <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider group-hover:translate-x-1.5 transition duration-300 flex items-center">
-                    Enter Dashboard <ChevronRight className="w-4 h-4 ml-0.5" />
+                <div className="mt-10 flex items-center justify-between w-full pt-4 border-t border-slate-100">
+                  <span className="text-xs font-extrabold text-emerald-600 uppercase tracking-wider group-hover:translate-x-1.5 transition duration-300 flex items-center">
+                    Start Group Form <ChevronRight className="w-4 h-4 ml-1" />
                   </span>
-                  <div className="text-[10px] text-slate-400 font-mono bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                    SECURE-GATE
+                  <div className="text-[10px] text-emerald-600 font-extrabold font-mono bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                    SAVE 10%
                   </div>
                 </div>
               </button>
             </div>
 
-            {/* Quick stats footer for the portal */}
-            <div className="max-w-md mx-auto pt-6 text-center">
+            {/* Subtle Footer with Admin Gateway */}
+            <div className="max-w-md mx-auto pt-4 flex flex-col items-center justify-center space-y-4">
               <p className="text-[11px] text-[#8E8E93] font-semibold tracking-wide">
                 Active Local Database: <span className="text-black font-extrabold font-mono">{allRegistrations.length} registrations</span> saved
               </p>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginError('');
+                  setPasscode('');
+                  setShowLoginModal(true);
+                }}
+                className="text-[10px] font-extrabold text-[#8E8E93] hover:text-black hover:underline tracking-widest uppercase cursor-pointer flex items-center space-x-1.5 transition duration-200 py-1 px-3 bg-white/60 hover:bg-white rounded-full border border-transparent hover:border-[#E5E5EA] shadow-sm animate-pulse"
+              >
+                <Lock className="w-3 h-3 text-[#8E8E93]" />
+                <span>Admin Console</span>
+              </button>
             </div>
           </div>
         )}
@@ -1487,36 +1519,7 @@ export default function App() {
                             <p className="text-xs text-[#8E8E93] mt-0.5 font-medium">Find the plan that best fits your fitness goals.</p>
                           </div>
 
-                          {/* Individual vs Group Registration Selection */}
-                          <div className="bg-[#F2F2F7] p-1.5 rounded-2xl border border-[#E5E5EA]">
-                            <div className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2 ml-2 mt-1">Registration Type</div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setRegistrationType('individual')}
-                                className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer ${
-                                  registrationType === 'individual'
-                                    ? 'bg-white text-black border border-[#E5E5EA] shadow-sm font-extrabold'
-                                    : 'text-slate-500 hover:text-black hover:bg-white/50'
-                                }`}
-                              >
-                                <User className={`w-4 h-4 ${registrationType === 'individual' ? 'text-[#007AFF]' : 'text-slate-400'}`} />
-                                <span>Individual (1 Person)</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setRegistrationType('group')}
-                                className={`flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer ${
-                                  registrationType === 'group'
-                                    ? 'bg-white text-black border border-[#E5E5EA] shadow-sm font-extrabold'
-                                    : 'text-slate-500 hover:text-black hover:bg-white/50'
-                                }`}
-                              >
-                                <Users className={`w-4 h-4 ${registrationType === 'group' ? 'text-[#007AFF]' : 'text-slate-400'}`} />
-                                <span>Group (2+ People)</span>
-                              </button>
-                            </div>
-                          </div>
+
 
                           {/* Dynamic Group Size selector if Group chosen */}
                           {registrationType === 'group' && (
